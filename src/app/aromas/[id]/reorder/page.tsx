@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { AppShell } from "@/components/AppShell";
+import { CustomerShell } from "@/components/customer/CustomerShell";
 import { AromaImage } from "@/components/AromaImage";
 import { Icon } from "@/components/Icon";
 import { ErrorState, LoadingState } from "@/components/States";
@@ -14,7 +14,7 @@ export default function ReorderPage() {
   const { record, loading, error } = useAromaRecord(params.id, session?.userId);
 
   return (
-    <AppShell>
+    <CustomerShell>
       <div className="grid min-h-screen place-items-center px-5 py-8">
         {loading ? <LoadingState /> : error ? <ErrorState message={error} /> : record ? (
           <section className="w-full rounded-[34px] bg-white p-6 text-center shadow-2xl shadow-stone-300/40">
@@ -38,6 +38,6 @@ export default function ReorderPage() {
           </section>
         ) : <ErrorState message="記録が見つかりません" />}
       </div>
-    </AppShell>
+    </CustomerShell>
   );
 }

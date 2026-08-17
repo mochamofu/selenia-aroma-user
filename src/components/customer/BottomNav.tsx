@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { customerTabs } from "@/lib/routes";
-import { Icon } from "./Icon";
+import { customerTabs } from "@/lib/customerNav";
+import { Icon } from "@/components/Icon";
 
 export function BottomNav({ pathname }: { pathname: string }) {
   return (

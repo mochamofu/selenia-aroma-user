@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { AromaRecord } from "@/types/aroma";
-import { AromaImage } from "./AromaImage";
-import { Icon } from "./Icon";
+import { AromaImage } from "@/components/AromaImage";
+import { Icon } from "@/components/Icon";
 
 export function AromaHeroCard({ record }: { record: AromaRecord }) {
   return (

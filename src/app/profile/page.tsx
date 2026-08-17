@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AppShell } from "@/components/AppShell";
+import { CustomerShell } from "@/components/customer/CustomerShell";
 import { AromaCard } from "@/components/AromaCard";
 import { Icon } from "@/components/Icon";
 import { useAromaRecords } from "@/hooks/useAromaRecords";
@@ -15,7 +15,7 @@ export default function ProfilePage() {
   const favorites = records.filter((record) => record.favorite);
 
   return (
-    <AppShell>
+    <CustomerShell>
       <div className="space-y-6 px-5 py-6">
         <header className="flex items-center justify-between">
           <Link href="/dashboard" className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-md" aria-label="戻る"><Icon name="ArrowLeft" className="h-5 w-5" /></Link>
@@ -43,6 +43,6 @@ export default function ProfilePage() {
           <button onClick={logout} className="flex h-14 w-full items-center gap-3 px-5 text-left text-sm font-bold text-red-600"><Icon name="LogOut" className="h-5 w-5" />ログアウト</button>
         </section>
       </div>
-    </AppShell>
+    </CustomerShell>
   );
 }

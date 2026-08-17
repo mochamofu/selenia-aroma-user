@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, useMemo, useRef, useState } from "react";
+import { ChangeEvent, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity,
   BrainCircuit,
@@ -24,6 +24,7 @@ import {
   X,
 } from "lucide-react";
 import { demoAromas, demoBaseBlends } from "@/data/mockData";
+import { buildOperatorCustomer, operatorCustomers } from "@/data/operatorCustomers";
 import { essentialOils } from "@/data/essentialOils";
 import type { AromaRecord, BaseBlend, EssentialOil } from "@/types/aroma";
 import type { Profile } from "@/types/profile";
@@ -170,16 +171,6 @@ const emptyEssentialOilForm: EssentialOilForm = {
   safetyNote: "",
 };
 
-const operatorCustomers: Profile[] = [
-  customer("profile-sakura", "user-sakura", "田中 さくら", "2026-01-12T00:00:00.000Z", ["リラックス系", "ウッディ系"], ["夜", "就寝前"]),
-  customer("profile-ren", "user-ren", "佐藤 蓮", "2026-01-28T00:00:00.000Z", ["集中系", "ミント系"], ["朝", "仕事前"]),
-  customer("profile-mika", "user-mika", "鈴木 美香", "2026-02-08T00:00:00.000Z", ["フローラル系", "バランス系"], ["夕方", "入浴後"]),
-  customer("profile-haruto", "user-haruto", "高橋 陽斗", "2026-02-19T00:00:00.000Z", ["シトラス系", "リフレッシュ系"], ["昼", "外出前"]),
-  customer("profile-natsumi", "user-natsumi", "中村 夏美", "2026-03-02T00:00:00.000Z", ["ハーバル系", "睡眠系"], ["夜", "休日"]),
-  customer("profile-naoto", "user-naoto", "小林 直人", "2026-03-14T00:00:00.000Z", ["森林系", "集中系"], ["朝", "作業前"]),
-  customer("profile-eriko", "user-eriko", "伊藤 恵理子", "2026-03-27T00:00:00.000Z", ["樹脂系", "落ち着き系"], ["夕方", "瞑想前"]),
-  customer("profile-daichi", "user-daichi", "森田 大地", "2026-04-05T00:00:00.000Z", ["スパイス系", "元気系"], ["午前", "運動前"]),
-];
 
 const hearingProfiles: Record<string, { kana: string; birthday: string }> = {
   "user-sakura": { kana: "たなか さくら", birthday: "1988-05-21" },
@@ -570,6 +561,7 @@ export default function OperatorKartePage() {
   const [baseAdminPassword, setBaseAdminPassword] = useState("");
   const [baseAdminError, setBaseAdminError] = useState("");
   const [toast, setToast] = useState("");
+  const [clientDrawerOpen, setClientDrawerOpen] = useState(false);
 
   const selectedCustomer = customers.find((customer) => customer.user_id === selectedCustomerId) ?? customers[0];
   const customerImages = brainwaveImages.filter((image) => image.customerId === selectedCustomerId);
@@ -610,6 +602,7 @@ export default function OperatorKartePage() {
 
   function selectCustomer(customerId: string) {
     setSelectedCustomerId(customerId);
+    setClientDrawerOpen(false);
     const firstRecord = operatorAromas.find((record) => record.user_id === customerId);
     const firstDraft = savedDrafts.find((draft) => draft.customerId === customerId);
     if (firstRecord) {
@@ -624,6 +617,18 @@ export default function OperatorKartePage() {
     setSelectedImageId(firstImage?.id ?? "");
     setSelectedHistory(null);
   }
+
+  // 顧客一覧(/admin/customers)から ?customer= で渡された顧客をマウント時に一度だけ選択する。
+  // URLはサーバー描画時に読めないため初期stateには入れられず、マウント後の反映が必要になる。
+  useEffect(() => {
+    const requested = new URLSearchParams(window.location.search).get("customer");
+    if (requested && customers.some((customer) => customer.user_id === requested)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 初回のみURLの指定を反映する
+      selectCustomer(requested);
+    }
+    // 以降の切り替えはカルテ内の操作で行うため、依存配列は空で固定する
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function selectRecordHistory(record: OperatorRecord) {
     setSelectedHistory({ kind: "record", id: record.id });
@@ -761,7 +766,7 @@ export default function OperatorKartePage() {
       return;
     }
 
-    const profile = customer(
+    const profile = buildOperatorCustomer(
       `profile-${userId}`,
       userId,
       name,
@@ -909,6 +914,17 @@ export default function OperatorKartePage() {
                 <p className="mt-1 text-xs text-[#827690]">1分測定画像、顧客ID、制作日、独自ブレンドを同じ履歴に紐づけます。</p>
               </div>
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setClientDrawerOpen(true)}
+                  aria-expanded={clientDrawerOpen}
+                  aria-label="顧客リストを開く"
+                  className="flex h-9 max-w-[220px] items-center gap-2 rounded-lg border border-[#ded7ec] bg-white px-3 text-xs font-bold text-[#584d6b] transition hover:border-[#b7a5dd]"
+                >
+                  <Users className="h-4 w-4 text-[#8d6fd1]" />
+                  <span className="truncate">{selectedCustomer?.name ?? "顧客を選択"}</span>
+                  <ListTree className="h-4 w-4 text-[#9a8caf]" />
+                </button>
                 <button className="hidden h-9 items-center gap-2 rounded-lg border border-[#ded7ec] bg-white px-3 text-xs font-bold text-[#584d6b] sm:flex">
                   <CalendarDays className="h-4 w-4" />
                   2026/07/07
@@ -934,13 +950,15 @@ export default function OperatorKartePage() {
           ) : null}
 
           {activeTab === "karte" ? (
-            <section className="grid gap-4 p-4 lg:grid-cols-[260px_minmax(0,1fr)_380px] lg:p-6">
-              <ClientPanel
+            <section className="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_440px] lg:p-6">
+              <ClientDrawer
+                open={clientDrawerOpen}
                 customers={customers}
                 selectedCustomerId={selectedCustomerId}
                 savedDrafts={savedDrafts}
                 onSelectCustomer={selectCustomer}
                 onOpenAddCustomer={() => setCreationPanel("customer")}
+                onClose={() => setClientDrawerOpen(false)}
               />
 
               <div className="min-w-0 space-y-4">
@@ -1164,27 +1182,44 @@ export default function OperatorKartePage() {
                         </button>
                       </div>
                       <div className="mt-2 space-y-2">
-                        <div className="grid grid-cols-[minmax(0,1fr)_92px_92px_30px] gap-2 px-1 text-[11px] font-bold text-[#7b708d]">
-                          <span>材料</span>
-                          <span>配合量(μL)</span>
-                          <span>{targetVolumeMl || "0"}mL時</span>
-                          <span />
-                        </div>
                         {calculatedRecipe.map((row) => (
-                          <div key={row.id} className="grid grid-cols-[minmax(0,1fr)_92px_92px_30px] gap-2">
-                            <input list="operator-oil-names" value={row.name} onChange={(event) => updateOil(row.id, { name: event.target.value })} className="field-input h-10" />
-                            <input
-                              value={row.amountUl}
-                              onChange={(event) => updateOil(row.id, { amountUl: event.target.value })}
-                              className="field-input h-10 px-2"
-                              inputMode="decimal"
-                              aria-label={`${row.name} の配合量 μL`}
-                            />
-                            <output className="flex h-10 items-center rounded-lg border border-[#ddd6ea] bg-white px-2 text-sm font-bold text-[#3b3152]">
-                              {formatDisplayVolume(row.calculatedVolumeUl, volumeUnit)}
-                            </output>
-                            <button type="button" onClick={() => setAddedOils((rows) => rows.filter((item) => item.id !== row.id))} className="rounded-lg bg-[#f3effb] text-[#7b7088]" aria-label="追加オイルを削除">×</button>
-                            <p className="col-span-4 -mt-1 px-1 text-[11px] text-[#9a8caf]">構成比 {formatNumber(row.ratioPercent)}%</p>
+                          <div key={row.id} className="rounded-lg border border-[#e8e2f2] bg-[#fbf9ff] p-2">
+                            <div className="flex items-center gap-2">
+                              <input
+                                list="operator-oil-names"
+                                value={row.name}
+                                onChange={(event) => updateOil(row.id, { name: event.target.value })}
+                                className="field-input h-10 min-w-0 flex-1"
+                                aria-label="材料名"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setAddedOils((rows) => rows.filter((item) => item.id !== row.id))}
+                                className="grid h-10 w-8 shrink-0 place-items-center rounded-lg bg-[#f3effb] text-[#7b7088]"
+                                aria-label={`${row.name} を削除`}
+                              >
+                                ×
+                              </button>
+                            </div>
+                            <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] items-center gap-2">
+                              <label className="min-w-0">
+                                <span className="block px-1 text-[11px] font-bold text-[#7b708d]">配合量(μL)</span>
+                                <input
+                                  value={row.amountUl}
+                                  onChange={(event) => updateOil(row.id, { amountUl: event.target.value })}
+                                  className="field-input mt-1 h-10 w-full px-2"
+                                  inputMode="decimal"
+                                  aria-label={`${row.name} の配合量 μL`}
+                                />
+                              </label>
+                              <label className="min-w-0">
+                                <span className="block px-1 text-[11px] font-bold text-[#7b708d]">{targetVolumeMl || "0"}mL時</span>
+                                <output className="mt-1 flex h-10 items-center rounded-lg border border-[#ddd6ea] bg-white px-2 text-sm font-bold text-[#3b3152]">
+                                  {formatDisplayVolume(row.calculatedVolumeUl, volumeUnit)}
+                                </output>
+                              </label>
+                              <span className="self-end pb-3 text-[11px] font-bold text-[#9a8caf]">構成比 {formatNumber(row.ratioPercent)}%</span>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1474,35 +1509,51 @@ export default function OperatorKartePage() {
   );
 }
 
-function ClientPanel({
+function ClientDrawer({
+  open,
   customers,
   selectedCustomerId,
   savedDrafts,
   onSelectCustomer,
   onOpenAddCustomer,
+  onClose,
 }: {
+  open: boolean;
   customers: Profile[];
   selectedCustomerId: string;
   savedDrafts: SavedDraft[];
   onSelectCustomer: (customerId: string) => void;
   onOpenAddCustomer: () => void;
+  onClose: () => void;
 }) {
+  if (!open) return null;
+
   return (
-    <aside className="rounded-lg border border-[#e4dff0] bg-white p-3">
+    <div className="fixed inset-0 z-50 flex">
+      <button type="button" onClick={onClose} className="absolute inset-0 bg-[#2a2338]/40" aria-label="顧客リストを閉じる" />
+      <aside className="relative h-full w-[min(320px,86vw)] overflow-y-auto border-r border-[#e4dff0] bg-white p-3 shadow-2xl" aria-label="顧客リスト">
       <div className="flex items-center justify-between gap-2 px-1">
         <div>
-          <h2 className="flex items-center gap-2 text-sm font-bold text-[#3b3152]"><Users className="h-4 w-4 text-[#8d6fd1]" />顧客階層</h2>
+          <h2 className="flex items-center gap-2 text-sm font-bold text-[#3b3152]"><Users className="h-4 w-4 text-[#8d6fd1]" />顧客リスト</h2>
           <span className="text-xs font-bold text-[#7f738d]">{customers.length}名</span>
         </div>
-        <button
-          type="button"
-          onClick={onOpenAddCustomer}
-          className="flex h-8 items-center gap-1 rounded-lg bg-[#8d6fd1] px-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#755bb4]"
-        >
-          <Plus className="h-3.5 w-3.5" />
-          カルテ追加
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={onOpenAddCustomer}
+            className="flex h-8 items-center gap-1 rounded-lg bg-[#8d6fd1] px-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#755bb4]"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            カルテ追加
+          </button>
+          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-lg bg-[#f3effb] text-[#7b7088]" aria-label="閉じる">
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
+      <p className="mt-2 rounded-lg bg-[#fffaf0] px-2 py-1.5 text-[11px] leading-4 text-[#806232]">
+        他の顧客名が画面に残らないよう、選択すると自動で閉じます。
+      </p>
       <div className="mt-3 space-y-2">
         {customers.map((customer) => {
           const recordCount = operatorAromas.filter((record) => record.user_id === customer.user_id).length + savedDrafts.filter((draft) => draft.customerId === customer.user_id).length;
@@ -1530,7 +1581,8 @@ function ClientPanel({
           );
         })}
       </div>
-    </aside>
+      </aside>
+    </div>
   );
 }
 
@@ -1814,25 +1866,6 @@ function TopTab({ active, label, onClick }: { active: boolean; label: string; on
   );
 }
 
-function customer(
-  id: string,
-  userId: string,
-  name: string,
-  createdAt: string,
-  favoriteTypes: string[],
-  frequentTimes: string[],
-): Profile {
-  return {
-    id,
-    user_id: userId,
-    name,
-    avatar_url: null,
-    role: "customer",
-    created_at: createdAt,
-    favorite_types: favoriteTypes,
-    frequent_times: frequentTimes,
-  };
-}
 
 function cloneRecord(source: AromaRecord, patch: Partial<OperatorRecord> & Pick<OperatorRecord, "id" | "user_id" | "title" | "brainwave_image_id" | "total_volume_ml" | "formula_items" | "maker_note">): OperatorRecord {
   const aromaRecordId = patch.id ?? source.id;

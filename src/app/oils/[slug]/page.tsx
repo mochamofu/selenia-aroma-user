@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { AppShell } from "@/components/AppShell";
+import { CustomerShell } from "@/components/customer/CustomerShell";
 import { Icon } from "@/components/Icon";
 import { ErrorState } from "@/components/States";
 import { essentialOils } from "@/data/essentialOils";
@@ -15,7 +15,7 @@ export default function EssentialOilDetailPage() {
   const oil = essentialOils.find((item) => item.slug === params.slug);
 
   return (
-    <AppShell>
+    <CustomerShell>
       {!oil ? (
         <div className="p-5"><ErrorState message="精油データが見つかりません" /></div>
       ) : (
@@ -52,7 +52,7 @@ export default function EssentialOilDetailPage() {
           </p>
         </div>
       )}
-    </AppShell>
+    </CustomerShell>
   );
 }
 

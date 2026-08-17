@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { MoodCategory } from "@/types/aroma";
-import { Icon } from "./Icon";
+import { Icon } from "@/components/Icon";
 
 export function MoodCard({ mood }: { mood: MoodCategory }) {
   return (

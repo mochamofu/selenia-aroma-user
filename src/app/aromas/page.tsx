@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AppShell } from "@/components/AppShell";
+import { CustomerShell } from "@/components/customer/CustomerShell";
 import { AromaCard } from "@/components/AromaCard";
 import { Icon } from "@/components/Icon";
 import { EmptyState, ErrorState, LoadingState } from "@/components/States";
@@ -21,7 +21,7 @@ export default function AromasPage() {
   }, [records, tab]);
 
   return (
-    <AppShell>
+    <CustomerShell>
       <div className="space-y-5 px-5 py-6">
         <header className="flex items-start justify-between">
           <div>
@@ -46,6 +46,6 @@ export default function AromasPage() {
           </div>
         ) : <EmptyState title="まだアロマ記録がありません" description="最初の香りを登録しましょう" />}
       </div>
-    </AppShell>
+    </CustomerShell>
   );
 }

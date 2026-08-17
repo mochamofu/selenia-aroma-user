@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Icon } from "./Icon";
+import { Icon } from "@/components/Icon";
 
 export function ReorderButton({ aromaId, available }: { aromaId: string; available: boolean }) {
   if (!available) {

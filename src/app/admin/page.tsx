@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AppShell } from "@/components/AppShell";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { AromaImage } from "@/components/AromaImage";
 import { Icon } from "@/components/Icon";
 import { QuickActionCard } from "@/components/QuickActionCard";
@@ -17,26 +17,26 @@ export default function AdminPage() {
   const stats = useAdminStats(records);
 
   return (
-    <AppShell variant="admin">
-      <div className="space-y-6 px-5 py-6">
-        <header className="flex items-center justify-between">
-          <button className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-md" aria-label="メニュー"><Icon name="Menu" className="h-5 w-5" /></button>
-          <h1 className="text-xl font-bold text-stone-900">管理者ダッシュボード</h1>
+    <AdminShell>
+      <div className="space-y-6 px-5 py-6 lg:px-8 lg:py-8">
+        <header className="flex items-center justify-between gap-3">
+          <button className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-md md:hidden" aria-label="メニュー"><Icon name="Menu" className="h-5 w-5" /></button>
+          <h1 className="text-xl font-bold text-stone-900 lg:text-2xl">管理者ダッシュボード</h1>
           <button className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-md" aria-label="通知"><Icon name="Bell" className="h-5 w-5" /></button>
         </header>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3 md:max-w-[760px] lg:gap-4">
           <Kpi label="顧客数" value={stats.customers} />
           <Kpi label="記録数" value={stats.records} />
           <Kpi label="今月" value={stats.newThisMonth} />
         </div>
-        <Link href="/admin/aromas/new" className="flex h-14 items-center justify-center gap-2 rounded-full bg-[#2f2a25] text-base font-bold text-white shadow-lg transition hover:brightness-110 active:scale-95">
+        <Link href="/admin/aromas/new" className="flex h-14 items-center justify-center gap-2 rounded-full bg-[#2f2a25] text-base font-bold text-white shadow-lg transition hover:brightness-110 active:scale-95 sm:w-fit sm:px-8">
           <Icon name="FlaskConical" className="h-5 w-5" />
           アロマ記録を新規作成
         </Link>
         <section>
           <h2 className="mb-3 text-lg font-bold text-stone-900">最近のアロマ記録</h2>
           {loading ? <LoadingState /> : (
-            <div className="space-y-3">
+            <div className="grid gap-3 lg:grid-cols-2">
               {records.slice(0, 4).map((record) => {
                 const customer = demoCustomers.find((item) => item.user_id === record.user_id);
                 return (
@@ -55,7 +55,7 @@ export default function AdminPage() {
         </section>
         <section>
           <h2 className="mb-3 text-lg font-bold text-stone-900">クイックメニュー</h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             <QuickActionCard label="顧客一覧" href="/admin/customers" icon="Users" />
             <QuickActionCard label="アロマ記録一覧" href="/admin/aromas" icon="Layers" />
             <QuickActionCard label="新規作成" href="/admin/aromas/new" icon="FlaskConical" />
@@ -64,7 +64,7 @@ export default function AdminPage() {
           </div>
         </section>
       </div>
-    </AppShell>
+    </AdminShell>
   );
 }
 

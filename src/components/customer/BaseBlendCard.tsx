@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { BaseBlend } from "@/types/aroma";
-import { Icon } from "./Icon";
+import { Icon } from "@/components/Icon";
 
 export function BaseBlendCard({ blend }: { blend: BaseBlend }) {
   return (
