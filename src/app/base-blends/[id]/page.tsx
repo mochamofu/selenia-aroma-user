@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { AppShell } from "@/components/AppShell";
+import { CustomerShell } from "@/components/customer/CustomerShell";
 import { AromaCard } from "@/components/AromaCard";
 import { Icon } from "@/components/Icon";
 import { ErrorState, EmptyState } from "@/components/States";
@@ -19,7 +19,7 @@ export default function BaseBlendDetailPage() {
   const relatedRecords = records.filter((record) => record.base_blend_id === params.id);
 
   return (
-    <AppShell>
+    <CustomerShell>
       {!blend ? (
         <div className="p-5"><ErrorState message="ベースブレンドが見つかりません" /></div>
       ) : (
@@ -74,6 +74,6 @@ export default function BaseBlendDetailPage() {
           </section>
         </div>
       )}
-    </AppShell>
+    </CustomerShell>
   );
 }

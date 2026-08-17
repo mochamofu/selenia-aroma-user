@@ -1,10 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { AppShell } from "@/components/AppShell";
-import { BaseBlendCard } from "@/components/BaseBlendCard";
-import { MoodCard } from "@/components/MoodCard";
-import { EssentialOilCard } from "@/components/EssentialOilCard";
+import { CustomerShell } from "@/components/customer/CustomerShell";
+import { BaseBlendCard } from "@/components/customer/BaseBlendCard";
+import { MoodCard } from "@/components/customer/MoodCard";
+import { EssentialOilCard } from "@/components/customer/EssentialOilCard";
 import { Icon } from "@/components/Icon";
 import { essentialOils } from "@/data/essentialOils";
 import { demoBaseBlends, demoMoods } from "@/data/mockData";
@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 export default function MoodsPage() {
   useAuth("customer");
   return (
-    <AppShell>
+    <CustomerShell>
       <div className="space-y-5 px-5 py-6">
         <header>
           <h1 className="text-2xl font-bold text-stone-900">気分・目的から探す</h1>
@@ -49,6 +49,6 @@ export default function MoodsPage() {
           </div>
         </section>
       </div>
-    </AppShell>
+    </CustomerShell>
   );
 }

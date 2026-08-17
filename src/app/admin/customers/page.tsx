@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AppShell } from "@/components/AppShell";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { Icon } from "@/components/Icon";
 import { operatorCustomers } from "@/data/operatorCustomers";
 import { useAuth } from "@/hooks/useAuth";
@@ -9,7 +9,7 @@ import { useAuth } from "@/hooks/useAuth";
 export default function AdminCustomersPage() {
   useAuth("admin");
   return (
-    <AppShell variant="admin">
+    <AdminShell>
       <div className="space-y-5 px-5 py-6 lg:px-8 lg:py-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -38,6 +38,6 @@ export default function AdminCustomersPage() {
           ))}
         </div>
       </div>
-    </AppShell>
+    </AdminShell>
   );
 }

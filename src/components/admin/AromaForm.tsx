@@ -3,10 +3,10 @@
 import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { AppShell } from "@/components/AppShell";
-import { FormSection } from "@/components/FormSection";
+import { AdminShell } from "@/components/admin/AdminShell";
+import { FormSection } from "@/components/admin/FormSection";
 import { Icon } from "@/components/Icon";
-import { ImageUploader } from "@/components/ImageUploader";
+import { ImageUploader } from "@/components/admin/ImageUploader";
 import { demoBaseBlends, demoCustomers } from "@/data/mockData";
 import { createAromaRecord } from "@/services/aromaRecordsService";
 import { useAromaRecord } from "@/hooks/useAromaRecords";
@@ -60,7 +60,7 @@ export function AromaForm({ mode, aromaId }: { mode: "new" | "edit"; aromaId?: s
   }
 
   return (
-    <AppShell variant="admin">
+    <AdminShell>
       <form onSubmit={onSubmit} className="space-y-5 px-5 py-6 lg:px-8 lg:py-8">
         <header className="flex items-center gap-3">
           <Link href="/admin" className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-md" aria-label="戻る"><Icon name="ArrowLeft" className="h-5 w-5" /></Link>
@@ -128,6 +128,6 @@ export function AromaForm({ mode, aromaId }: { mode: "new" | "edit"; aromaId?: s
           <button type="submit" className="h-14 rounded-full bg-[#2f2a25] text-sm font-bold text-white shadow-lg transition hover:brightness-110">保存</button>
         </div>
       </form>
-    </AppShell>
+    </AdminShell>
   );
 }

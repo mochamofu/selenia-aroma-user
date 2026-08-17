@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { AppShell } from "@/components/AppShell";
+import { CustomerShell } from "@/components/customer/CustomerShell";
 import { AromaImage } from "@/components/AromaImage";
 import { FavoriteButton } from "@/components/FavoriteButton";
 import { Icon } from "@/components/Icon";
-import { IngredientList } from "@/components/IngredientList";
-import { ReorderButton } from "@/components/ReorderButton";
+import { IngredientList } from "@/components/customer/IngredientList";
+import { ReorderButton } from "@/components/customer/ReorderButton";
 import { ErrorState, LoadingState } from "@/components/States";
 import { demoBaseBlends } from "@/data/mockData";
 import { useAromaRecord } from "@/hooks/useAromaRecords";
@@ -21,7 +21,7 @@ export default function AromaDetailPage() {
   const baseBlend = demoBaseBlends.find((blend) => blend.id === record?.base_blend_id);
 
   return (
-    <AppShell>
+    <CustomerShell>
       {loading ? <LoadingState /> : error ? <ErrorState message={error} /> : record ? (
         <div className="space-y-5">
           <section className="relative">
@@ -76,7 +76,7 @@ export default function AromaDetailPage() {
       ) : (
         <div className="p-5"><ErrorState message="記録が見つかりません" /><Link className="mt-4 inline-block font-bold text-[#755aa8]" href="/aromas">一覧に戻る</Link></div>
       )}
-    </AppShell>
+    </CustomerShell>
   );
 }
 

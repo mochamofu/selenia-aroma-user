@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { adminTabs, isAdminTabActive } from "@/lib/routes";
-import { Icon } from "./Icon";
+import { adminTabs, isAdminTabActive } from "@/lib/adminNav";
+import { Icon } from "@/components/Icon";
 
 export function AdminSideNav({ pathname }: { pathname: string }) {
   return (

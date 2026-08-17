@@ -1,14 +1,14 @@
 "use client";
 
-import { AppShell } from "@/components/AppShell";
-import { BaseBlendCard } from "@/components/BaseBlendCard";
+import { CustomerShell } from "@/components/customer/CustomerShell";
+import { BaseBlendCard } from "@/components/customer/BaseBlendCard";
 import { demoBaseBlends } from "@/data/mockData";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function BaseBlendsPage() {
   useAuth("customer");
   return (
-    <AppShell>
+    <CustomerShell>
       <div className="space-y-5 px-5 py-6">
         <header>
           <h1 className="text-2xl font-bold text-stone-900">ベースブレンド図鑑</h1>
@@ -18,6 +18,6 @@ export default function BaseBlendsPage() {
           {demoBaseBlends.map((blend) => <BaseBlendCard key={blend.id} blend={blend} />)}
         </div>
       </div>
-    </AppShell>
+    </CustomerShell>
   );
 }

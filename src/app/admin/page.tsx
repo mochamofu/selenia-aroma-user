@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AppShell } from "@/components/AppShell";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { AromaImage } from "@/components/AromaImage";
 import { Icon } from "@/components/Icon";
 import { QuickActionCard } from "@/components/QuickActionCard";
@@ -17,7 +17,7 @@ export default function AdminPage() {
   const stats = useAdminStats(records);
 
   return (
-    <AppShell variant="admin">
+    <AdminShell>
       <div className="space-y-6 px-5 py-6 lg:px-8 lg:py-8">
         <header className="flex items-center justify-between gap-3">
           <button className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-md md:hidden" aria-label="メニュー"><Icon name="Menu" className="h-5 w-5" /></button>
@@ -64,7 +64,7 @@ export default function AdminPage() {
           </div>
         </section>
       </div>
-    </AppShell>
+    </AdminShell>
   );
 }
 

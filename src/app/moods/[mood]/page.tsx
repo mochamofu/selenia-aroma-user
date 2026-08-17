@@ -1,9 +1,9 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { AppShell } from "@/components/AppShell";
+import { CustomerShell } from "@/components/customer/CustomerShell";
 import { AromaCard } from "@/components/AromaCard";
-import { EssentialOilCard } from "@/components/EssentialOilCard";
+import { EssentialOilCard } from "@/components/customer/EssentialOilCard";
 import { EmptyState, LoadingState } from "@/components/States";
 import { essentialOils } from "@/data/essentialOils";
 import { demoMoods } from "@/data/mockData";
@@ -19,7 +19,7 @@ export default function MoodResultPage() {
   const oils = essentialOils.filter((oil) => oil.mood_slugs.includes(params.mood));
 
   return (
-    <AppShell>
+    <CustomerShell>
       <div className="space-y-5 px-5 py-6">
         <header>
           <h1 className="text-2xl font-bold text-stone-900">{mood?.name ?? "気分から探す"}</h1>
@@ -38,6 +38,6 @@ export default function MoodResultPage() {
           ) : <EmptyState title="該当する記録がありません" description="別の気分・目的から探してみてください" />}
         </section>
       </div>
-    </AppShell>
+    </CustomerShell>
   );
 }

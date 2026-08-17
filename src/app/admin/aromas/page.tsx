@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { AppShell } from "@/components/AppShell";
+import { AdminShell } from "@/components/admin/AdminShell";
 import { AromaCard } from "@/components/AromaCard";
 import { useAromaRecords } from "@/hooks/useAromaRecords";
 import { useAuth } from "@/hooks/useAuth";
@@ -10,7 +10,7 @@ export default function AdminAromasPage() {
   const { session } = useAuth("admin");
   const { records } = useAromaRecords(session?.userId, true);
   return (
-    <AppShell variant="admin">
+    <AdminShell>
       <div className="space-y-5 px-5 py-6 lg:px-8 lg:py-8">
         <div className="flex items-center justify-between gap-3">
           <h1 className="text-2xl font-bold text-stone-900">アロマ記録一覧</h1>
@@ -20,6 +20,6 @@ export default function AdminAromasPage() {
           {records.map((record) => <AromaCard key={record.id} record={record} userId={session?.userId} />)}
         </div>
       </div>
-    </AppShell>
+    </AdminShell>
   );
 }

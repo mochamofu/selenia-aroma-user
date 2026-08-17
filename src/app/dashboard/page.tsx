@@ -1,8 +1,8 @@
 "use client";
 
-import { AppShell } from "@/components/AppShell";
+import { CustomerShell } from "@/components/customer/CustomerShell";
 import { AromaCard } from "@/components/AromaCard";
-import { AromaHeroCard } from "@/components/AromaHeroCard";
+import { AromaHeroCard } from "@/components/customer/AromaHeroCard";
 import { Icon } from "@/components/Icon";
 import { QuickActionCard } from "@/components/QuickActionCard";
 import { EmptyState, ErrorState, LoadingState } from "@/components/States";
@@ -15,7 +15,7 @@ export default function DashboardPage() {
   const hero = records[0];
 
   return (
-    <AppShell>
+    <CustomerShell>
       <div className="space-y-7 px-5 py-6">
         <header className="flex items-center justify-between">
           <div>
@@ -52,6 +52,6 @@ export default function DashboardPage() {
           <p className="mt-2 text-sm leading-6 text-stone-600">夜は Relax Night Blend、朝は Morning Refresh がよく選ばれています。</p>
         </section>
       </div>
-    </AppShell>
+    </CustomerShell>
   );
 }

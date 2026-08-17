@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { EssentialOil } from "@/types/aroma";
-import { Icon } from "./Icon";
+import { Icon } from "@/components/Icon";
 
 export function EssentialOilCard({ oil }: { oil: EssentialOil }) {
   return (
