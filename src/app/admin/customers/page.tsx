@@ -9,9 +9,9 @@ export default function AdminCustomersPage() {
   useAuth("admin");
   return (
     <AppShell variant="admin">
-      <div className="space-y-5 px-5 py-6">
+      <div className="space-y-5 px-5 py-6 lg:px-8 lg:py-8">
         <h1 className="text-2xl font-bold text-stone-900">顧客一覧</h1>
-        <div className="space-y-3">
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {demoCustomers.filter((profile) => profile.role === "customer").map((profile) => (
             <div key={profile.id} className="flex items-center gap-3 rounded-[24px] bg-white p-4 shadow-md shadow-stone-300/20">
               <div className="grid h-12 w-12 place-items-center rounded-2xl bg-[#d7c58e] font-bold text-white">{profile.name.slice(0, 1)}</div>

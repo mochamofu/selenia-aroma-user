@@ -61,7 +61,7 @@ export function AromaForm({ mode, aromaId }: { mode: "new" | "edit"; aromaId?: s
 
   return (
     <AppShell variant="admin">
-      <form onSubmit={onSubmit} className="space-y-5 px-5 py-6">
+      <form onSubmit={onSubmit} className="space-y-5 px-5 py-6 lg:px-8 lg:py-8">
         <header className="flex items-center gap-3">
           <Link href="/admin" className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-md" aria-label="戻る"><Icon name="ArrowLeft" className="h-5 w-5" /></Link>
           <div>
@@ -71,6 +71,7 @@ export function AromaForm({ mode, aromaId }: { mode: "new" | "edit"; aromaId?: s
         </header>
         {toast ? <div className="rounded-2xl bg-[#eef4e9] p-3 text-sm font-bold text-[#5e7d56]">{toast}</div> : null}
         {error ? <div className="rounded-2xl bg-red-50 p-3 text-sm font-bold text-red-700">{error}</div> : null}
+        <div className="grid gap-5 lg:grid-cols-2 lg:items-start">
         <FormSection title="基本情報">
           <select name="user_id" defaultValue={record?.user_id ?? "user-yuka"} className={inputClass} aria-label="顧客選択">
             {demoCustomers.filter((profile) => profile.role === "customer").map((profile) => <option key={profile.user_id} value={profile.user_id}>{profile.name}</option>)}
@@ -111,7 +112,7 @@ export function AromaForm({ mode, aromaId }: { mode: "new" | "edit"; aromaId?: s
           ))}
           <button type="button" className="h-12 w-full rounded-full border border-[#d7c58e] text-sm font-bold text-[#9f7a2f]" onClick={() => setIngredients((items) => [...items, { id: `new-${Date.now()}`, aroma_record_id: "", name: "", amount: "", unit: "滴", sort_order: items.length + 1 }])}>行追加</button>
         </FormSection>
-        <FormSection title="メモと導線">
+        <FormSection title="メモと導線" className="lg:col-span-2">
           <textarea name="blend_notes" defaultValue={record?.blend_notes} className={textareaClass} placeholder="ブレンドメモ" />
           <textarea name="usage_notes" defaultValue={record?.usage_notes} className={textareaClass} placeholder="使用方法" />
           <textarea name="caution_notes" defaultValue={record?.caution_notes} className={textareaClass} placeholder="注意事項" />
@@ -121,9 +122,10 @@ export function AromaForm({ mode, aromaId }: { mode: "new" | "edit"; aromaId?: s
             <option value="published">公開</option>
           </select>
         </FormSection>
-        <div className="grid grid-cols-2 gap-3">
-          <button type="submit" name="status" value="draft" className="h-14 rounded-full bg-[#f4ead3] text-sm font-bold text-[#9f7a2f]">下書き保存</button>
-          <button type="submit" className="h-14 rounded-full bg-[#2f2a25] text-sm font-bold text-white shadow-lg">保存</button>
+        </div>
+        <div className="grid grid-cols-2 gap-3 lg:ml-auto lg:w-[420px]">
+          <button type="submit" name="status" value="draft" className="h-14 rounded-full bg-[#f4ead3] text-sm font-bold text-[#9f7a2f] transition hover:brightness-[0.97]">下書き保存</button>
+          <button type="submit" className="h-14 rounded-full bg-[#2f2a25] text-sm font-bold text-white shadow-lg transition hover:brightness-110">保存</button>
         </div>
       </form>
     </AppShell>
