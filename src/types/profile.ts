@@ -6,6 +6,7 @@ export type Profile = {
   name: string;
   avatar_url: string | null;
   role: UserRole;
+  customer_number?: string | null;
   created_at: string;
   favorite_types?: string[];
   frequent_times?: string[];

@@ -16,7 +16,16 @@ export type AuthSession = {
 export function getStoredSession(): AuthSession | null {
   if (typeof window === "undefined") return null;
   const raw = window.localStorage.getItem(STORAGE_KEY);
-  return raw ? (JSON.parse(raw) as AuthSession) : null;
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw) as AuthSession;
+    if (typeof parsed?.userId !== "string" || typeof parsed?.role !== "string") return null;
+    return parsed;
+  } catch {
+    // 壊れた値が入っていた場合は画面を落とさず未ログイン扱いにし、残骸を消す。
+    window.localStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
 }
 
 export function getDemoProfile(session: AuthSession | null): Profile | null {
