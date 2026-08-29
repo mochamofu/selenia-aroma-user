@@ -13,5 +13,8 @@ export function createSqliteRunner(db: DatabaseSync): QueryRunner {
     async first(sql, params) {
       return (db.prepare(sql).get(...(params as never[])) ?? null) as never;
     },
+    async run(sql, params) {
+      db.prepare(sql).run(...(params as never[]));
+    },
   };
 }

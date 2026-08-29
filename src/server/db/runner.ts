@@ -8,6 +8,7 @@
 export type QueryRunner = {
   all<T = Record<string, unknown>>(sql: string, params: unknown[]): Promise<T[]>;
   first<T = Record<string, unknown>>(sql: string, params: unknown[]): Promise<T | null>;
+  run(sql: string, params: unknown[]): Promise<void>;
 };
 
 /** Cloudflare D1 のバインディングが持つ最小限の形。 */
@@ -16,6 +17,7 @@ type D1Like = {
     bind(...values: unknown[]): {
       all<T>(): Promise<{ results?: T[] }>;
       first<T>(): Promise<T | null>;
+      run(): Promise<unknown>;
     };
   };
 };
@@ -28,6 +30,9 @@ export function createD1Runner(db: D1Like): QueryRunner {
     },
     async first(sql, params) {
       return (await db.prepare(sql).bind(...params).first()) as never;
+    },
+    async run(sql, params) {
+      await db.prepare(sql).bind(...params).run();
     },
   };
 }

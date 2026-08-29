@@ -4,6 +4,7 @@ import { DatabaseSync } from "node:sqlite";
 import { readFileSync } from "node:fs";
 import { AccessDeniedError, type Viewer } from "./access.ts";
 import { createSqliteRunner } from "./sqliteRunner.ts";
+import { listAuditForSubject } from "./audit.ts";
 import {
   countCustomers,
   findAromaRecord,
@@ -30,6 +31,7 @@ before(() => {
   const dir = new URL("../../../cloudflare/d1/", import.meta.url);
   raw.exec(readFileSync(new URL("0001_initial.sql", dir), "utf8"));
   raw.exec(readFileSync(new URL("0002_seed.sql", dir), "utf8"));
+  raw.exec(readFileSync(new URL("0003_audit_consent.sql", dir), "utf8"));
   raw.exec(`
     insert into aroma_records (id,user_id,title,made_at,status,base_blend_id) values
       ('r1','user-sakura','さくらの公開記録','2026-05-08','published','base-02'),
@@ -120,5 +122,45 @@ describe("事業者専用の情報", () => {
     assert.equal((await listHearingSheets(db, OPERATOR, "r1")).length, 1);
     assert.ok(await findPrivateRecipe(db, OPERATOR, "base-02"));
     assert.equal(await countCustomers(db, OPERATOR), 8);
+  });
+});
+
+describe("閲覧の記録（監査ログ）", () => {
+  test("事業者がヒアリングシートを開くと、誰の情報を見たかが残る", async () => {
+    await listHearingSheets(db, OPERATOR, "r1", "調香前の確認");
+    const rows = await listAuditForSubject(db, "user-sakura");
+    const hit = rows.find((r) => (r as { target_table: string }).target_table === "hearing_sheets");
+    assert.ok(hit, "ヒアリングシートの閲覧が記録されていない");
+    assert.equal((hit as { actor_user_id: string }).actor_user_id, "user-staff");
+    assert.equal((hit as { action: string }).action, "view");
+    assert.equal((hit as { reason: string }).reason, "調香前の確認");
+  });
+
+  test("事業者が顧客のカルテを開くと記録される", async () => {
+    await findAromaRecord(db, OPERATOR, "r3");
+    const rows = await listAuditForSubject(db, "user-ren");
+    assert.ok(rows.some((r) => (r as { target_id: string }).target_id === "r3"));
+  });
+
+  test("顧客が自分の記録を見ただけでは記録されない", async () => {
+    const before = (await listAuditForSubject(db, "user-sakura")).length;
+    await findAromaRecord(db, SAKURA, "r1");
+    const after = (await listAuditForSubject(db, "user-sakura")).length;
+    assert.equal(after, before);
+  });
+
+  test("権限がなく弾かれた場合は記録も残らない", async () => {
+    const before = (await listAuditForSubject(db, "user-sakura")).length;
+    await assert.rejects(() => listHearingSheets(db, SAKURA, "r1"), AccessDeniedError);
+    const after = (await listAuditForSubject(db, "user-sakura")).length;
+    assert.equal(after, before);
+  });
+
+  test("内部配合比率の閲覧も記録される", async () => {
+    await findPrivateRecipe(db, OPERATOR, "base-02");
+    const rows = await db.all(
+      "select target_table from audit_logs where target_table = 'base_blend_private_recipes'", [],
+    );
+    assert.ok(rows.length > 0);
   });
 });

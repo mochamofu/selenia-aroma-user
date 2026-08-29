@@ -4,10 +4,12 @@ import {
   buildAromaRecordScope,
   buildProfileScope,
   buildUserOwnedScope,
+  isOperatorRole,
   selectWithScope,
   type Viewer,
 } from "./access.ts";
 import type { QueryRunner } from "./runner.ts";
+import { recordAudit } from "./audit.ts";
 
 /**
  * 画面から使うDB問い合わせはすべてここに集約する。
@@ -41,12 +43,23 @@ export async function listAromaRecords(db: QueryRunner, viewer: Viewer, options:
   return db.all(query.sql, query.params);
 }
 
-export async function findAromaRecord(db: QueryRunner, viewer: Viewer, id: string) {
+export async function findAromaRecord(db: QueryRunner, viewer: Viewer, id: string, reason?: string) {
   const query = selectWithScope("aroma_records", RECORD_COLUMNS, buildAromaRecordScope(viewer), {
     extraSql: "id = ?",
     extraParams: [id],
   });
-  return db.first(query.sql, query.params);
+  const row = await db.first<{ user_id: string }>(query.sql, query.params);
+  // 本人が自分の記録を見た場合は記録しない。事業者が顧客の記録を開いた場合に残す。
+  if (row && isOperatorRole(viewer)) {
+    await recordAudit(db, viewer, {
+      action: "view",
+      targetTable: "aroma_records",
+      targetId: id,
+      subjectUserId: row.user_id,
+      reason,
+    });
+  }
+  return row;
 }
 
 /** 制作記録に紐づく材料。記録が見えない相手には材料も返さない。 */
@@ -75,8 +88,18 @@ export async function listBrainwaveImages(db: QueryRunner, viewer: Viewer, userI
 }
 
 /** 事前ヒアリング。健康・服薬情報を含むため事業者のみ。 */
-export async function listHearingSheets(db: QueryRunner, viewer: Viewer, recordId: string) {
+export async function listHearingSheets(db: QueryRunner, viewer: Viewer, recordId: string, reason?: string) {
   assertCanReadOperatorTable(viewer, "hearing_sheets");
+  const owner = await db.first<{ user_id: string }>(
+    `select user_id from aroma_records where id = ?`, [recordId],
+  );
+  await recordAudit(db, viewer, {
+    action: "view",
+    targetTable: "hearing_sheets",
+    targetId: recordId,
+    subjectUserId: owner?.user_id ?? null,
+    reason,
+  });
   return db.all(
     `select id, user_id, source, submitted_at, name_kana, birthday, purpose_tags,
             desired_scent, preference_notes, health_notes, medication_notes, safety_flags, operator_summary
@@ -86,8 +109,14 @@ export async function listHearingSheets(db: QueryRunner, viewer: Viewer, recordI
 }
 
 /** 内部配合比率。顧客には出さない。 */
-export async function findPrivateRecipe(db: QueryRunner, viewer: Viewer, baseBlendId: string) {
+export async function findPrivateRecipe(db: QueryRunner, viewer: Viewer, baseBlendId: string, reason?: string) {
   assertCanReadOperatorTable(viewer, "base_blend_private_recipes");
+  await recordAudit(db, viewer, {
+    action: "view",
+    targetTable: "base_blend_private_recipes",
+    targetId: baseBlendId,
+    reason,
+  });
   return db.first(
     `select id, base_blend_id, internal_ratio, private_note
        from base_blend_private_recipes where base_blend_id = ?`,
