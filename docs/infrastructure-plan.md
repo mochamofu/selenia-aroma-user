@@ -86,12 +86,30 @@ D1にはこの仕組みが無いため、**アプリ側のチェックを1箇所
 
 ## 移行の順番
 
-1. D1用のスキーマを作り、既存の固定データを投入して読み取りだけ動かす
-2. `src/services/*` の中身をD1呼び出しに差し替える（画面は変更しない）
-3. Better Authでメール・パスワード認証を実装し、デモの自動入場を止める
-4. アクセス制御を集約したモジュールを作り、権限のテストを書く
+1. D1用のスキーマを作り、既存の固定データを投入して読み取りだけ動かす **（完了）**
+2. アクセス制御を集約したモジュールを作り、権限のテストを書く **（完了）**
+3. `src/services/*` の中身をD1呼び出しに差し替える（画面は変更しない）
+4. Better Authでメール・パスワード認証を実装し、デモの自動入場を止める
 5. 脳波画像をR2に保存する
 6. Cloudflare Workersへデプロイし、独自ドメインを繋ぐ
 7. 顧客番号（`customer_number`）を採番して保存する
 
 各段階で動作を確認し、1つずつ進める。
+
+### 完了している部分
+
+| ファイル | 内容 |
+| --- | --- |
+| `cloudflare/d1/0001_initial.sql` | D1用のスキーマ |
+| `cloudflare/d1/0002_seed.sql` | 既存の固定データの投入用SQL（自動生成） |
+| `scripts/generate-d1-seed.mjs` | 上記を作り直すための生成スクリプト |
+| `src/server/db/access.ts` | 権限の絞り込み条件を組み立てる |
+| `src/server/db/repositories.ts` | 画面から使うDB問い合わせの集約先 |
+| `src/server/db/runner.ts` | D1と検証用SQLiteを同じ形で扱う層 |
+| `cloudflare/wrangler.toml` | Workers設定のひな型（IDは要記入） |
+
+### 次に必要なもの
+
+CloudflareのダッシュボードでD1データベースとR2バケットを作成し、
+`cloudflare/wrangler.toml` の `database_id` と `bucket_name` を記入する。
+Database IDは秘密情報ではないため、そのままコミットしてよい。

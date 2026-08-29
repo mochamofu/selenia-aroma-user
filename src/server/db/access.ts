@@ -26,6 +26,11 @@ export class AccessDeniedError extends Error {
 
 export type SqlCondition = { sql: string; params: unknown[] };
 
+/** 結合したときに列名が衝突しないよう、表の別名を付ける。 */
+function col(name: string, alias?: string) {
+  return alias ? `${alias}.${name}` : name;
+}
+
 /** 事業者側（管理者・測定担当）かどうか。 */
 export function isOperatorRole(viewer: Viewer): boolean {
   return viewer.role === "admin" || viewer.role === "operator";
@@ -45,12 +50,26 @@ export function assertOperator(viewer: Viewer): void {
  * - 事業者: 全件（下書きを含む）
  * - 未ログイン: 1件も返さない
  */
-export function buildAromaRecordScope(viewer: Viewer): SqlCondition {
+export function buildAromaRecordScope(viewer: Viewer, alias?: string): SqlCondition {
   if (isOperatorRole(viewer)) {
     return { sql: "1 = 1", params: [] };
   }
   if (viewer.role === "customer") {
-    return { sql: "user_id = ? and status = 'published'", params: [viewer.userId] };
+    return { sql: `${col("user_id", alias)} = ? and ${col("status", alias)} = 'published'`, params: [viewer.userId] };
+  }
+  return { sql: "1 = 0", params: [] };
+}
+
+/**
+ * user_id を持つ行に対する共通の絞り込み。脳波画像やお気に入りなど、
+ * 「本人のものだけ見える」表に使う。
+ */
+export function buildUserOwnedScope(viewer: Viewer, alias?: string): SqlCondition {
+  if (isOperatorRole(viewer)) {
+    return { sql: "1 = 1", params: [] };
+  }
+  if (viewer.role === "customer") {
+    return { sql: `${col("user_id", alias)} = ?`, params: [viewer.userId] };
   }
   return { sql: "1 = 0", params: [] };
 }
@@ -62,14 +81,8 @@ export function buildAromaRecordScope(viewer: Viewer): SqlCondition {
  * - 事業者: 全件
  * - 未ログイン: 1件も返さない
  */
-export function buildProfileScope(viewer: Viewer): SqlCondition {
-  if (isOperatorRole(viewer)) {
-    return { sql: "1 = 1", params: [] };
-  }
-  if (viewer.role === "customer") {
-    return { sql: "user_id = ?", params: [viewer.userId] };
-  }
-  return { sql: "1 = 0", params: [] };
+export function buildProfileScope(viewer: Viewer, alias?: string): SqlCondition {
+  return buildUserOwnedScope(viewer, alias);
 }
 
 /**
