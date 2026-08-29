@@ -26,8 +26,8 @@ const lines = [
 
 for (const p of operatorCustomers) {
   lines.push(
-    `insert into profiles (id, user_id, store_id, customer_number, name, role, favorite_types, frequent_times, created_at) values (` +
-    [q(p.id), q(p.user_id), q("store-ginza"), q(p.customer_number), q(p.name), q(p.role),
+    `insert into profiles (id, user_id, store_id, customer_number, name, name_kana, role, favorite_types, frequent_times, created_at) values (` +
+    [q(p.id), q(p.user_id), q("store-ginza"), q(p.customer_number), q(p.name), q(p.name_kana ?? ""), q(p.role),
      j(p.favorite_types), j(p.frequent_times), q(p.created_at)].join(", ") + `);`
   );
 }

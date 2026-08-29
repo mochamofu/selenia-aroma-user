@@ -22,8 +22,12 @@ create table if not exists profiles (
   -- 顧客番号(カルテ番号): 店舗2桁 + 年度2桁 + 店舗内連番4桁
   customer_number text unique,
   name text not null,
+  name_kana text not null default '',
+  birthday text,
   avatar_url text,
   role text not null default 'customer',
+  -- 最終来店日。顧客の呼び出しで新しい順に並べるために持つ
+  last_visit_at text,
   favorite_types text not null default '[]',
   frequent_times text not null default '[]',
   created_at text not null default (datetime('now')),
@@ -161,7 +165,15 @@ create table if not exists favorites (
   unique (user_id, aroma_record_id)
 );
 
+-- 顧客の呼び出しは全店横断の検索を既定とする。
+-- 顧客番号は「人」に一度だけ発行し、先頭2桁は初回登録した店舗を表すだけで
+-- 所属先を固定しない。別の店舗へ来店しても同じ番号を使い履歴は1本につながる。
+-- 店舗で絞り込むと他店で登録した常連客が出てこなくなるため、店舗は絞り込み条件
+-- ではなく同姓同名を見分けるための表示項目として扱う。
 create index if not exists idx_profiles_customer_number on profiles(customer_number);
+create index if not exists idx_profiles_name on profiles(name);
+create index if not exists idx_profiles_kana on profiles(name_kana);
+create index if not exists idx_profiles_last_visit on profiles(last_visit_at);
 create index if not exists idx_profiles_store on profiles(store_id);
 create index if not exists idx_records_user_status on aroma_records(user_id, status, made_at);
 create index if not exists idx_ingredients_record on aroma_ingredients(aroma_record_id, sort_order);

@@ -51,7 +51,7 @@ export async function recordAudit(db: QueryRunner, viewer: Viewer, entry: AuditE
 export async function listAuditForSubject(db: QueryRunner, subjectUserId: string, limit = 100) {
   return db.all(
     `select id, actor_user_id, actor_role, action, target_table, target_id, reason, created_at
-       from audit_logs where subject_user_id = ? order by created_at desc limit ?`,
+       from audit_logs where subject_user_id = ? order by created_at desc, rowid desc limit ?`,
     [subjectUserId, limit],
   );
 }

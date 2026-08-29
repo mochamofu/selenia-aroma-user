@@ -16,7 +16,7 @@ import { recordAudit } from "./audit.ts";
  * 画面側で直接SQLを書かないことで、権限の絞り込みの書き忘れを防ぐ。
  */
 
-const PROFILE_COLUMNS = "id, user_id, customer_number, name, avatar_url, role, favorite_types, frequent_times, created_at";
+const PROFILE_COLUMNS = "id, user_id, customer_number, name, name_kana, birthday, avatar_url, role, favorite_types, frequent_times, last_visit_at, created_at";
 const RECORD_COLUMNS = "id, user_id, title, subtitle, concept, mood, purpose, status, made_at, base_blend_id, base_blend_name, brainwave_image_id, blend_lot_number, reorder_url, price, volume";
 
 export async function listProfiles(db: QueryRunner, viewer: Viewer) {
@@ -151,4 +151,46 @@ export async function countCustomers(db: QueryRunner, viewer: Viewer) {
   assertOperator(viewer);
   const row = await db.first<{ c: number }>(`select count(*) as c from profiles where role = 'customer'`, []);
   return row?.c ?? 0;
+}
+
+/**
+ * 顧客を呼び出すための検索。
+ *
+ * 一覧を常に画面へ出さず、担当者が名前などで引いて1名を特定する形にする。
+ * 検索は全店横断が既定。店舗は絞り込みではなく、同姓同名を見分けるための
+ * 表示項目として返す。店舗で絞り込むと他店で登録した常連客が出てこなくなる。
+ *
+ * 顧客情報へのアクセスにあたるため、事業者のみ実行でき、検索した事実を記録する。
+ */
+export async function searchCustomers(
+  db: QueryRunner,
+  viewer: Viewer,
+  keyword: string,
+  options: { limit?: number; reason?: string } = {},
+) {
+  assertOperator(viewer);
+
+  const trimmed = keyword.trim();
+  // 空文字で全件が返ると、一覧を出さない方針が崩れるため何も返さない
+  if (trimmed === "") return [];
+
+  await recordAudit(db, viewer, {
+    action: "view",
+    targetTable: "profiles",
+    targetId: null,
+    reason: options.reason ?? `顧客検索: ${trimmed}`,
+  });
+
+  const like = `%${trimmed}%`;
+  return db.all(
+    `select p.user_id, p.customer_number, p.name, p.name_kana, p.birthday,
+            p.last_visit_at, s.name as store_name, s.store_code
+       from profiles p
+       left join stores s on s.id = p.store_id
+      where p.role = 'customer'
+        and (p.name like ? or p.name_kana like ? or p.customer_number like ?)
+      order by (p.last_visit_at is null), p.last_visit_at desc, p.name
+      limit ?`,
+    [like, like, like, options.limit ?? 20],
+  );
 }
