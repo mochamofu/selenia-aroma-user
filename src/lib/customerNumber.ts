@@ -4,7 +4,13 @@
  * 「人」と「できごと」で番号を分ける。ここが設計の要点。
  *
  *   顧客番号 (customer number) … 人に一度だけ発行する。一生変わらない
+ *     表示 CLT-2600123        (CLienT)
  *   施術番号 (session number)  … 1回の測定+調香に発行する。二度と変わらない
+ *     表示 LOT-260904-010-01  (ボトルのロット番号を兼ねる)
+ *
+ * DBには数字だけ(7桁 / 11桁)を入れ、画面や紙には接頭辞を付けて出す。
+ * 数字だけを2種類並べると、作った本人以外には見分けがつかないため。
+ * 入力はどちらの形でも受け付ける(normalizeNumber が接頭辞を落とす)。
  *
  * 混ぜてはいけない理由:
  *   - 顧客番号に日付を入れると、同じ人が来店のたびに別番号になる
@@ -50,7 +56,7 @@ export function buildStoreCode(joinOrder: number): string {
 /**
  * 顧客番号は 年度2桁 + 通し番号5桁 = 7桁。
  *
- *   2600123  →  表示は 26-00123
+ *   2600123  →  表示は CLT-2600123
  *
  * 通し番号は全加盟店で共通の連番。店舗ごとに採番しないため、
  * 別の店舗で2つ目の番号が発行される事故が起きない。
@@ -86,11 +92,14 @@ export function parseCustomerNumber(value: string): CustomerNumberParts | null {
   return { fiscalYear: raw.slice(0, 2), serial: raw.slice(2, 7) };
 }
 
-/** 画面や紙に出すときの表記。26-00123 のようにハイフンで区切って読みやすくする。 */
+/** 顧客番号の接頭辞。CLienT。施術番号と見分けるために付ける。 */
+export const CUSTOMER_NUMBER_PREFIX = "CLT";
+
+/** 画面や紙に出すときの表記。CLT-2600123 */
 export function formatCustomerNumber(value: string): string | null {
   const parts = parseCustomerNumber(value);
   if (!parts) return null;
-  return `${parts.fiscalYear}-${parts.serial}`;
+  return `${CUSTOMER_NUMBER_PREFIX}-${parts.fiscalYear}${parts.serial}`;
 }
 
 export function describeCustomerNumber(value: string): string | null {
@@ -106,7 +115,7 @@ export function describeCustomerNumber(value: string): string | null {
 /**
  * 施術番号は 日付6桁 + 加盟店3桁 + その日の連番2桁 = 11桁。
  *
- *   260904 010 01  →  表示は 260904-010-01
+ *   260904 010 01  →  表示は LOT-260904-010-01
  *   (2026年9月4日 / 加盟店010 / その日の1件目)
  *
  * これはボトルに貼るロット番号を兼ねる。番号1つで
@@ -156,11 +165,14 @@ export function parseSessionNumber(value: string): SessionNumberParts | null {
   return { date: raw.slice(0, 6), storeCode: raw.slice(6, 9), dailySerial: raw.slice(9, 11) };
 }
 
-/** 画面や紙に出すときの表記。260904-010-01 */
+/** 施術番号の接頭辞。ボトルのロット番号を兼ねるため LOT。 */
+export const SESSION_NUMBER_PREFIX = "LOT";
+
+/** 画面や紙に出すときの表記。LOT-260904-010-01 */
 export function formatSessionNumber(value: string): string | null {
   const parts = parseSessionNumber(value);
   if (!parts) return null;
-  return `${parts.date}-${parts.storeCode}-${parts.dailySerial}`;
+  return `${SESSION_NUMBER_PREFIX}-${parts.date}-${parts.storeCode}-${parts.dailySerial}`;
 }
 
 export function describeSessionNumber(value: string, storeName?: string): string | null {
@@ -176,11 +188,16 @@ export function describeSessionNumber(value: string, storeName?: string): string
 // ---------------------------------------------------------------------------
 
 /**
- * 入力のゆらぎを吸収する。手で打つときにハイフンや空白、全角数字が混ざるため。
+ * 入力のゆらぎを吸収して、DBに入っている数字だけの形にする。
+ *
+ * 落とすもの: 接頭辞(CLT / LOT)、ハイフン、空白、全角の数字と英字。
+ * 「CLT-2600123」と打っても「2600123」と打っても同じ番号として扱う。
  * 検索欄と保存前の両方でこれを通す。
  */
 export function normalizeNumber(value: string): string {
   return value
     .replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(/[Ａ-Ｚａ-ｚ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0))
+    .replace(new RegExp(`^\\s*(?:${CUSTOMER_NUMBER_PREFIX}|${SESSION_NUMBER_PREFIX})`, "i"), "")
     .replace(/[\s\-‐－ー_./]/g, "");
 }

@@ -43,8 +43,8 @@ describe("顧客番号（人に一度だけ発行する）", () => {
     assert.equal(buildCustomerNumber({ year: 2027, serial: 99999 }), "2799999");
   });
 
-  test("表示はハイフンで区切る", () => {
-    assert.equal(formatCustomerNumber("2600123"), "26-00123");
+  test("表示は CLT- を付ける", () => {
+    assert.equal(formatCustomerNumber("2600123"), "CLT-2600123");
   });
 
   test("番号から年度と何人目かが読める", () => {
@@ -79,8 +79,8 @@ describe("施術番号（1回の測定+調香に発行する）", () => {
     assert.equal(buildSessionNumber({ date, storeCode: "010", dailySerial: 1 }), "26090401001");
   });
 
-  test("表示はハイフンで区切る", () => {
-    assert.equal(formatSessionNumber("26090401001"), "260904-010-01");
+  test("表示は LOT- を付けてハイフンで区切る", () => {
+    assert.equal(formatSessionNumber("26090401001"), "LOT-260904-010-01");
   });
 
   test("番号だけで いつ・どこで・その日の何件目か が読める", () => {
@@ -136,6 +136,19 @@ describe("顧客番号と施術番号は別物", () => {
   });
 });
 
+describe("接頭辞で2つの番号を見分ける", () => {
+  test("CLT と LOT で、数字を読まなくても種類が分かる", () => {
+    const customer = formatCustomerNumber(buildCustomerNumber({ year: 2026, serial: 123 }));
+    const session = formatSessionNumber(
+      buildSessionNumber({ date: new Date(2026, 8, 4), storeCode: "010", dailySerial: 1 }),
+    );
+    assert.equal(customer, "CLT-2600123");
+    assert.equal(session, "LOT-260904-010-01");
+    assert.ok(customer?.startsWith("CLT-"));
+    assert.ok(session?.startsWith("LOT-"));
+  });
+});
+
 describe("入力のゆらぎ", () => {
   test("ハイフン・空白・全角数字を吸収する", () => {
     assert.equal(normalizeNumber("26-00123"), "2600123");
@@ -144,12 +157,29 @@ describe("入力のゆらぎ", () => {
     assert.equal(normalizeNumber("260904-010-01"), "26090401001");
   });
 
+  test("接頭辞を付けて打っても、付けずに打っても同じ番号になる", () => {
+    assert.equal(normalizeNumber("CLT-2600123"), "2600123");
+    assert.equal(normalizeNumber("CLT2600123"), "2600123", "ハイフンなし");
+    assert.equal(normalizeNumber("clt-2600123"), "2600123", "小文字");
+    assert.equal(normalizeNumber("ＣＬＴ-２６００１２３"), "2600123", "全角");
+    assert.equal(normalizeNumber("LOT-260904-010-01"), "26090401001");
+  });
+
   test("表示形のまま入れても有効と判定される", () => {
+    assert.equal(isValidCustomerNumber("CLT-2600123"), true);
     assert.equal(isValidCustomerNumber("26-00123"), true);
+    assert.equal(isValidSessionNumber("LOT-260904-010-01"), true);
     assert.equal(isValidSessionNumber("260904-010-01"), true);
+  });
+
+  test("接頭辞が付いていても取り違えは弾かれる", () => {
+    // CLT- を付けても中身が11桁なら顧客番号としては通さない
+    assert.equal(isValidCustomerNumber("CLT-260904-010-01"), false);
+    assert.equal(isValidSessionNumber("LOT-2600123"), false);
   });
 
   test("ゆらぎを吸収したうえで解釈できる", () => {
     assert.equal(describeCustomerNumber("２６-００１２３"), "2026年度 / 123人目");
+    assert.equal(describeCustomerNumber("CLT-2600123"), "2026年度 / 123人目");
   });
 });
