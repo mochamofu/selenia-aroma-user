@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { demoAromas, demoBaseBlends } from "@/data/mockData";
 import { buildOperatorCustomer, operatorCustomers } from "@/data/operatorCustomers";
+import { loadKarteDrafts, saveKarteDrafts } from "@/services/karteDraftStorage";
 import { essentialOils } from "@/data/essentialOils";
 import type { AromaRecord, BaseBlend, EssentialOil } from "@/types/aroma";
 import type { Profile } from "@/types/profile";
@@ -562,6 +563,7 @@ export default function OperatorKartePage() {
   const [baseAdminError, setBaseAdminError] = useState("");
   const [toast, setToast] = useState("");
   const [clientDrawerOpen, setClientDrawerOpen] = useState(false);
+  const [draftsRestored, setDraftsRestored] = useState(false);
 
   const selectedCustomer = customers.find((customer) => customer.user_id === selectedCustomerId) ?? customers[0];
   const customerImages = brainwaveImages.filter((image) => image.customerId === selectedCustomerId);
@@ -617,6 +619,25 @@ export default function OperatorKartePage() {
     setSelectedImageId(firstImage?.id ?? "");
     setSelectedHistory(null);
   }
+
+  // 保存済みのカルテ下書きをマウント時に読み戻す。
+  useEffect(() => {
+    const stored = loadKarteDrafts<SavedDraft>();
+    if (stored.length > 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 初回のみ保存済みの下書きを反映する
+      setSavedDrafts(stored);
+    }
+    setDraftsRestored(true);
+  }, []);
+
+  // 復元が終わったあとの変更だけを保存する（空配列で上書きしないため）。
+  useEffect(() => {
+    if (!draftsRestored) return;
+    if (!saveKarteDrafts(savedDrafts)) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- 保存失敗を利用者に伝える
+      setToast("下書きをこの端末に保存できませんでした。ブラウザの保存容量を確認してください。");
+    }
+  }, [savedDrafts, draftsRestored]);
 
   // 顧客一覧(/admin/customers)から ?customer= で渡された顧客をマウント時に一度だけ選択する。
   // URLはサーバー描画時に読めないため初期stateには入れられず、マウント後の反映が必要になる。
@@ -750,7 +771,7 @@ export default function OperatorKartePage() {
     };
     setSavedDrafts((drafts) => [draft, ...drafts]);
     setSelectedHistory({ kind: "draft", id: draft.id });
-    setToast(`${selectedCustomer?.name ?? "顧客"}の香り制作記録を保存しました。`);
+    setToast(`${selectedCustomer?.name ?? "顧客"}の香り制作記録を保存しました。この端末に残ります。`);
   }
 
   function addCustomerKarte() {
@@ -967,7 +988,7 @@ export default function OperatorKartePage() {
                     <div>
                       <p className="text-xs font-bold text-[#7f738d]">選択中のカルテ</p>
                       <h2 className="mt-1 text-2xl font-bold text-[#342a49]">{selectedCustomer?.name ?? "顧客未選択"}</h2>
-                      <p className="mt-1 text-sm text-[#786d87]">ID: {selectedCustomer?.user_id ?? "-"} / 登録日 {selectedCustomer?.created_at.slice(0, 10) ?? "-"}</p>
+                      <p className="mt-1 text-sm text-[#786d87]">顧客番号 <span className="font-bold tracking-[0.08em] text-[#584d6b]">{selectedCustomer?.customer_number ?? "未採番"}</span> / 登録日 {selectedCustomer?.created_at.slice(0, 10) ?? "-"}</p>
                     </div>
                     <div className="grid grid-cols-3 gap-2 text-center">
                       <MiniMetric label="履歴" value={customerRecords.length + customerDrafts.length} />

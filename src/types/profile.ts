@@ -4,8 +4,10 @@ export type Profile = {
   id: string;
   user_id: string;
   name: string;
+  name_kana?: string;
   avatar_url: string | null;
   role: UserRole;
+  customer_number?: string | null;
   created_at: string;
   favorite_types?: string[];
   frequent_times?: string[];

@@ -31,6 +31,7 @@ export default function AdminCustomersPage() {
               <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-[#d7c58e] font-bold text-white">{profile.name.slice(0, 1)}</div>
               <div className="min-w-0 flex-1">
                 <h2 className="truncate font-bold text-stone-900">{profile.name}</h2>
+                <p className="font-mono text-xs tracking-[0.08em] text-[#755aa8]">{profile.customer_number ?? "未採番"}</p>
                 <p className="text-xs text-stone-500">登録日 {profile.created_at.slice(0, 10)}</p>
               </div>
               <Icon name="ChevronRight" className="h-5 w-5 shrink-0 text-stone-400" />

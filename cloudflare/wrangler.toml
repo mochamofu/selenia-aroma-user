@@ -1,0 +1,21 @@
+# Cloudflare Workers の設定ひな型。
+# database_id と bucket_name は、Cloudflareのダッシュボードで作成したあとに差し替える。
+# ここに書く値はいずれも秘密情報ではないため、リポジトリに含めてよい。
+# APIトークンやアクセスキーはこのファイルに書かず、Cloudflare側に登録する。
+
+name = "selenia-aroma"
+main = ".open-next/worker.js"
+compatibility_date = "2026-08-17"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "selenia-aroma"
+database_id = "ここにDatabase IDを入れる"
+
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "selenia-aroma-images"
+
+[vars]
+NEXT_PUBLIC_APP_TARGET = "all"

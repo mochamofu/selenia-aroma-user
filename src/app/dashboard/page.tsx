@@ -19,7 +19,16 @@ export default function DashboardPage() {
       <div className="space-y-7 px-5 py-6">
         <header className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-stone-900">こんにちは、{profile?.name ?? "お客様"}</h1>
+            {/*
+              事業者向けアプリ(selenia-aroma-master)と見分けがつかないという声が
+              あったため、どちらのアプリを開いているのかをここで示す。
+              デモ表示ではログイン画面を経由せずこの画面に着地するため、
+              入口の表示はログイン画面ではなくここに置く必要がある。
+            */}
+            <p className="text-[11px] font-bold tracking-widest text-[#9b82c8]">
+              SELENIA AROMA ／ お客様用
+            </p>
+            <h1 className="mt-1 text-2xl font-bold text-stone-900">こんにちは、{profile?.name ?? "お客様"}</h1>
             <p className="mt-1 text-sm text-stone-500">今日も心地よい香りに包まれましょう</p>
           </div>
           <div className="flex items-center gap-2">
