@@ -6,12 +6,14 @@ import { BaseBlendCard } from "@/components/customer/BaseBlendCard";
 import { MoodCard } from "@/components/customer/MoodCard";
 import { EssentialOilCard } from "@/components/customer/EssentialOilCard";
 import { Icon } from "@/components/Icon";
-import { essentialOils } from "@/data/essentialOils";
-import { demoBaseBlends, demoMoods } from "@/data/mockData";
+import { useBaseBlends, useEssentialOils } from "@/hooks/useCatalog";
+import { demoMoods } from "@/data/mockData";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function MoodsPage() {
   useAuth("customer");
+  const { items: oils } = useEssentialOils();
+  const { items: baseBlends } = useBaseBlends();
   return (
     <CustomerShell>
       <div className="space-y-5 px-5 py-6">
@@ -33,7 +35,7 @@ export default function MoodsPage() {
             </span>
           </div>
           <div className="mt-4 grid gap-3">
-            {essentialOils.slice(0, 4).map((oil) => <EssentialOilCard key={oil.id} oil={oil} />)}
+            {oils.slice(0, 4).map((oil) => <EssentialOilCard key={oil.id} oil={oil} />)}
           </div>
         </section>
         <section className="rounded-[28px] bg-white p-5 shadow-lg shadow-stone-300/20">
@@ -45,7 +47,7 @@ export default function MoodsPage() {
             <Link href="/base-blends" className="text-sm font-bold text-[#755aa8]">すべて</Link>
           </div>
           <div className="mt-4 grid gap-3">
-            {demoBaseBlends.slice(0, 3).map((blend) => <BaseBlendCard key={blend.id} blend={blend} />)}
+            {baseBlends.slice(0, 3).map((blend) => <BaseBlendCard key={blend.id} blend={blend} />)}
           </div>
         </section>
       </div>

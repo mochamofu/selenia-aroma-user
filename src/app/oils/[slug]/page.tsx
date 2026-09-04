@@ -5,14 +5,15 @@ import { useParams, useRouter } from "next/navigation";
 import { CustomerShell } from "@/components/customer/CustomerShell";
 import { Icon } from "@/components/Icon";
 import { ErrorState } from "@/components/States";
-import { essentialOils } from "@/data/essentialOils";
+import { useEssentialOils } from "@/hooks/useCatalog";
 import { useAuth } from "@/hooks/useAuth";
 
 export default function EssentialOilDetailPage() {
   useAuth("customer");
   const params = useParams<{ slug: string }>();
   const router = useRouter();
-  const oil = essentialOils.find((item) => item.slug === params.slug);
+  const { items: oils } = useEssentialOils();
+  const oil = oils.find((item) => item.slug === params.slug);
 
   return (
     <CustomerShell>

@@ -5,8 +5,7 @@ import { CustomerShell } from "@/components/customer/CustomerShell";
 import { AromaCard } from "@/components/AromaCard";
 import { EssentialOilCard } from "@/components/customer/EssentialOilCard";
 import { EmptyState, LoadingState } from "@/components/States";
-import { essentialOils } from "@/data/essentialOils";
-import { demoMoods } from "@/data/mockData";
+import { useEssentialOils, useMoodCategories } from "@/hooks/useCatalog";
 import { useAromaRecords } from "@/hooks/useAromaRecords";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -14,9 +13,11 @@ export default function MoodResultPage() {
   const params = useParams<{ mood: string }>();
   const { session } = useAuth("customer");
   const { records, loading } = useAromaRecords(session?.userId);
-  const mood = demoMoods.find((item) => item.slug === params.mood);
+  const { items: moods } = useMoodCategories();
+  const { items: allOils } = useEssentialOils();
+  const mood = moods.find((item) => item.slug === params.mood);
   const results = records.filter((record) => `${record.mood}${record.purpose}${record.subtitle}`.includes(mood?.name.replace("したい", "") ?? ""));
-  const oils = essentialOils.filter((oil) => oil.mood_slugs.includes(params.mood));
+  const oils = allOils.filter((oil) => oil.mood_slugs.includes(params.mood));
 
   return (
     <CustomerShell>

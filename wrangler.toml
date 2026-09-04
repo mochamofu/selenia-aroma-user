@@ -9,6 +9,13 @@ main = ".open-next/worker.js"
 compatibility_date = "2026-08-17"
 compatibility_flags = ["nodejs_compat"]
 
+# JS・CSS・フォントなどの静的ファイルの置き場。
+# これが無いと /_next/static/* が404になり、ブラウザでJSが読み込まれず
+# 画面が固定データのまま動かなくなる(ハイドレーションが起きない)。
+[assets]
+directory = ".open-next/assets"
+binding = "ASSETS"
+
 [[d1_databases]]
 binding = "DB"
 database_name = "selenia-aroma"

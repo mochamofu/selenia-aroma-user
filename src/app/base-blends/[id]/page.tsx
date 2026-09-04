@@ -6,7 +6,7 @@ import { CustomerShell } from "@/components/customer/CustomerShell";
 import { AromaCard } from "@/components/AromaCard";
 import { Icon } from "@/components/Icon";
 import { ErrorState, EmptyState } from "@/components/States";
-import { demoBaseBlends } from "@/data/mockData";
+import { useBaseBlends } from "@/hooks/useCatalog";
 import { useAromaRecords } from "@/hooks/useAromaRecords";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -15,7 +15,8 @@ export default function BaseBlendDetailPage() {
   const router = useRouter();
   const { session } = useAuth("customer");
   const { records } = useAromaRecords(session?.userId);
-  const blend = demoBaseBlends.find((item) => item.id === params.id);
+  const { items: baseBlends } = useBaseBlends();
+  const blend = baseBlends.find((item) => item.id === params.id);
   const relatedRecords = records.filter((record) => record.base_blend_id === params.id);
 
   return (
