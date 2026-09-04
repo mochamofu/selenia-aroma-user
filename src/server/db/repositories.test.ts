@@ -57,9 +57,11 @@ before(() => {
       ('r2','user-sakura','さくらの下書き','2026-05-09','draft','base-02'),
       ('r3','user-ren','蓮の公開記録','2026-04-18','published','base-10')
   `);
+  // 投入データ(0002_seed.sql)にも材料が入っているため、IDが衝突しないよう
+  // テスト用は test- で始める
   raw.exec(`
     insert into aroma_ingredients (id,aroma_record_id,name,amount,unit,sort_order) values
-      ('i1','r1','ラベンダー','3','滴',1), ('i2','r3','レモン','2','滴',1)
+      ('test-i1','r1','ラベンダー','3','滴',1), ('test-i2','r3','レモン','2','滴',1)
   `);
   raw.exec(`insert into brainwave_images (id,user_id,r2_key,title) values ('b1','user-sakura','k1','1分測定'),('b2','user-ren','k2','1分測定')`);
   raw.exec(`insert into hearing_sheets (id,aroma_record_id,user_id,health_notes) values ('h1','r1','user-sakura','持病あり')`);
@@ -91,8 +93,13 @@ describe("投入したデータが読める", () => {
 
 describe("アロマ記録の権限", () => {
   test("顧客は自分の公開済みだけ", async () => {
-    const rows = await listAromaRecords(db, SAKURA);
-    assert.deepEqual(rows.map((r) => (r as { id: string }).id), ["r1"]);
+    // 件数ではなく性質を確かめる。投入データが増えても壊れず、
+    // 守りたい「他人のものが混ざらない」をそのまま見ている
+    const rows = (await listAromaRecords(db, SAKURA)) as { id: string; user_id: string; status: string }[];
+    assert.ok(rows.length > 0);
+    assert.equal(rows.every((r) => r.user_id === "user-sakura"), true, "全件が本人のもの");
+    assert.equal(rows.every((r) => r.status === "published"), true, "下書きは含まれない");
+    assert.ok(rows.some((r) => r.id === "r1"));
   });
   test("顧客は他人の記録をIDを知っていても取れない", async () => {
     assert.equal(await findAromaRecord(db, SAKURA, "r3"), null);
@@ -100,8 +107,12 @@ describe("アロマ記録の権限", () => {
   test("顧客は自分の下書きもIDを知っていても取れない", async () => {
     assert.equal(await findAromaRecord(db, SAKURA, "r2"), null);
   });
-  test("事業者は全件見える", async () => {
-    assert.equal((await listAromaRecords(db, OPERATOR)).length, 3);
+  test("事業者は下書きを含む全件が見える", async () => {
+    const all = (await listAromaRecords(db, OPERATOR)) as { id: string; status: string }[];
+    const own = (await listAromaRecords(db, SAKURA)) as { id: string }[];
+    assert.ok(all.length > own.length, "顧客より多く見える");
+    assert.ok(all.some((r) => r.status === "draft"), "下書きも見える");
+    assert.ok(all.some((r) => r.id === "r3"), "他人の記録も見える");
   });
   test("未ログインは0件", async () => {
     assert.equal((await listAromaRecords(db, GUEST)).length, 0);

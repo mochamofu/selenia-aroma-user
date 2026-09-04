@@ -255,7 +255,11 @@ describe("認証と権限がつながっていること", () => {
     const { token } = await createSession(db, { userId: "user-sakura" });
     const viewer = toViewer(await findSession(db, token));
     const result = rows(selectWithScope("aroma_records", "id,user_id", buildAromaRecordScope(viewer)));
-    assert.deepEqual(result.map((r) => r.id), ["r-sakura"]);
+    // 件数ではなく「他人のものが1件も混ざらない」ことを確かめる。
+    // 投入データが増えても壊れず、守りたい性質そのものを見ているため
+    assert.ok(result.length > 0, "自分の記録は引ける");
+    assert.equal(result.every((r) => r.user_id === "user-sakura"), true, "全件が本人のもの");
+    assert.ok(result.some((r) => r.id === "r-sakura"));
   });
 
   test("蓮のセッションからは、さくらの記録は引けない", async () => {

@@ -1,65 +1,59 @@
 "use client";
 
-import { isDemoModeEnabled, supabase } from "./supabaseClient";
-import { isCustomerOnlyApp } from "./appTarget";
-import { demoCustomers } from "@/data/mockData";
 import type { Profile, UserRole } from "@/types/profile";
 
-const STORAGE_KEY = "aroma-demo-session";
+/**
+ * 画面側の認証。
+ *
+ * ここには「誰がログインしているか」の判断を一切置かない。判断はサーバが行い、
+ * 画面はその結果を受け取るだけにする。以前は端末内(localStorage)に
+ * ログイン状態を持っていたが、それだと利用者が自分で書き換えられてしまう。
+ *
+ * セッションはHttpOnlyのCookieでやり取りするため、この画面のコードからは
+ * token を読むことも書くこともできない。それが狙い。
+ */
 
 export type AuthSession = {
   userId: string;
-  email: string;
   role: UserRole;
 };
 
-export function getStoredSession(): AuthSession | null {
-  if (typeof window === "undefined") return null;
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (!raw) return null;
+export type MeResponse = {
+  authenticated: boolean;
+  role: UserRole | "guest";
+  storeId?: string | null;
+  profile: Profile | null;
+};
+
+export class LoginError extends Error {}
+
+/** いまログインしているのが誰かをサーバに尋ねる。 */
+export async function fetchMe(): Promise<MeResponse> {
   try {
-    const parsed = JSON.parse(raw) as AuthSession;
-    if (typeof parsed?.userId !== "string" || typeof parsed?.role !== "string") return null;
-    return parsed;
+    const res = await fetch("/api/auth/me", { cache: "no-store", credentials: "same-origin" });
+    if (!res.ok) return { authenticated: false, role: "guest", profile: null };
+    return (await res.json()) as MeResponse;
   } catch {
-    // 壊れた値が入っていた場合は画面を落とさず未ログイン扱いにし、残骸を消す。
-    window.localStorage.removeItem(STORAGE_KEY);
-    return null;
+    return { authenticated: false, role: "guest", profile: null };
   }
 }
 
-export function getDemoProfile(session: AuthSession | null): Profile | null {
-  if (!session) return null;
-  return demoCustomers.find((profile) => profile.user_id === session.userId) ?? null;
-}
+export async function signInWithEmail(loginId: string, password: string): Promise<{ role: UserRole }> {
+  const res = await fetch("/api/auth/login", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    credentials: "same-origin",
+    body: JSON.stringify({ loginId, password }),
+  });
 
-export function createGuestCustomerSession() {
-  const session: AuthSession = { userId: "user-yuka", email: "guest@selenia-aroma.local", role: "customer" };
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-  }
-  return session;
-}
-
-export async function signInWithEmail(email: string, password: string) {
-  if (supabase) {
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
-    return data;
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new LoginError(body.error ?? "ログインに失敗しました");
   }
 
-  if (!isDemoModeEnabled) {
-    throw new Error("Supabaseの環境変数が未設定です。管理者に確認してください。");
-  }
-
-  const role: UserRole = isCustomerOnlyApp ? "customer" : email.includes("admin") ? "admin" : "customer";
-  const userId = role === "admin" ? "user-admin" : "user-yuka";
-  const session: AuthSession = { userId, email, role };
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
-  return { user: { id: userId, email }, role };
+  return (await res.json()) as { role: UserRole };
 }
 
-export async function signOut() {
-  if (supabase) await supabase.auth.signOut();
-  if (typeof window !== "undefined") window.localStorage.removeItem(STORAGE_KEY);
+export async function signOut(): Promise<void> {
+  await fetch("/api/auth/logout", { method: "POST", credentials: "same-origin" }).catch(() => {});
 }

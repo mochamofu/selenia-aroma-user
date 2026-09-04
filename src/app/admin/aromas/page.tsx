@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminAromasPage() {
   const { session } = useAuth("admin");
-  const { records } = useAromaRecords(session?.userId, true);
+  const { records } = useAromaRecords(session?.userId);
   return (
     <AdminShell>
       <div className="space-y-5 px-5 py-6 lg:px-8 lg:py-8">

@@ -13,7 +13,7 @@ import { useAuth } from "@/hooks/useAuth";
 
 export default function AdminPage() {
   const { session } = useAuth("admin");
-  const { records, loading } = useAromaRecords(session?.userId, true);
+  const { records, loading } = useAromaRecords(session?.userId);
   const stats = useAdminStats(records);
 
   return (

@@ -1,13 +1,21 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createGuestCustomerSession, getDemoProfile, getStoredSession, signOut, type AuthSession } from "@/lib/auth";
+import { fetchMe, signOut, type AuthSession } from "@/lib/auth";
 import { isCustomerOnlyApp } from "@/lib/appTarget";
-import { isDemoModeEnabled, supabase } from "@/lib/supabaseClient";
-import { getProfile } from "@/services/profileService";
 import type { Profile } from "@/types/profile";
 
+/**
+ * ログイン状態を画面へ渡す。
+ *
+ * 判断はすべてサーバが行う(/api/auth/me)。画面は結果を受け取るだけで、
+ * 端末内に持っている値でログイン状態を作らない。利用者が自分で書き換えられて
+ * しまうため。
+ *
+ * ログインしていなければ /login へ送る。読み込み中に中身を描画しないよう、
+ * 呼び出し側は loading の間はデータを出さないこと。
+ */
 export function useAuth(requiredRole?: "customer" | "admin") {
   const router = useRouter();
   const [session, setSession] = useState<AuthSession | null>(null);
@@ -15,73 +23,47 @@ export function useAuth(requiredRole?: "customer" | "admin") {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    let mounted = true;
-    async function load() {
-      try {
-        if (supabase) {
-          const { data } = await supabase.auth.getSession();
-          const user = data.session?.user;
-          if (!user) {
-            router.replace("/login");
-            return;
-          }
-          const currentProfile = await getProfile(user.id);
-          if (!mounted) return;
-          if (isCustomerOnlyApp && currentProfile?.role === "admin") {
-            await signOut();
-            router.replace("/login");
-            return;
-          }
-          setSession({ userId: user.id, email: user.email ?? "", role: currentProfile?.role ?? "customer" });
-          setProfile(currentProfile);
-          if (requiredRole && currentProfile?.role !== requiredRole) {
-            router.replace(currentProfile?.role === "admin" ? "/admin" : "/dashboard");
-          }
-          return;
-        }
-        if (!isDemoModeEnabled) {
-          router.replace("/login");
-          return;
-        }
-        const demoSession = getStoredSession();
-        if (!demoSession) {
-          if (isCustomerOnlyApp) {
-            const guestSession = createGuestCustomerSession();
-            setSession(guestSession);
-            setProfile(getDemoProfile(guestSession));
-            return;
-          }
-          router.replace("/login");
-          return;
-        }
-        if (isCustomerOnlyApp && demoSession.role === "admin") {
-          await signOut();
-          router.replace("/login");
-          return;
-        }
-        const demoProfile = getDemoProfile(demoSession);
-        setSession(demoSession);
-        setProfile(demoProfile);
-        if (requiredRole && demoSession.role !== requiredRole) {
-          router.replace(demoSession.role === "admin" ? "/admin" : "/dashboard");
-        }
-      } finally {
-        if (mounted) setLoading(false);
+    let alive = true;
+
+    fetchMe().then((me) => {
+      if (!alive) return;
+
+      if (!me.authenticated || me.role === "guest") {
+        setLoading(false);
+        router.replace("/login");
+        return;
       }
-    }
-    load();
+
+      // 購入者向けアプリでは、事業者の資格情報でログインしても顧客画面へ
+      // 入れない。役割ごとに見えるものが違うため、混ぜない
+      if (isCustomerOnlyApp && me.role !== "customer") {
+        setLoading(false);
+        signOut().then(() => router.replace("/login"));
+        return;
+      }
+
+      if (requiredRole && me.role !== requiredRole) {
+        setLoading(false);
+        router.replace(me.role === "admin" ? "/admin" : "/dashboard");
+        return;
+      }
+
+      setSession({ userId: me.profile?.user_id ?? "", role: me.role });
+      setProfile(me.profile);
+      setLoading(false);
+    });
+
     return () => {
-      mounted = false;
+      alive = false;
     };
   }, [requiredRole, router]);
 
-  return {
-    session,
-    profile,
-    loading,
-    logout: async () => {
-      await signOut();
-      router.replace("/login");
-    },
-  };
+  const logout = useCallback(async () => {
+    await signOut();
+    setSession(null);
+    setProfile(null);
+    router.replace("/login");
+  }, [router]);
+
+  return { session, profile, loading, logout };
 }

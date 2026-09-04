@@ -8,7 +8,6 @@ import { FormSection } from "@/components/admin/FormSection";
 import { Icon } from "@/components/Icon";
 import { ImageUploader } from "@/components/admin/ImageUploader";
 import { demoBaseBlends, demoCustomers } from "@/data/mockData";
-import { createAromaRecord } from "@/services/aromaRecordsService";
 import { useAromaRecord } from "@/hooks/useAromaRecords";
 import { useAuth } from "@/hooks/useAuth";
 import type { AromaIngredient } from "@/types/aroma";
@@ -19,7 +18,7 @@ const textareaClass = "min-h-28 w-full rounded-2xl border border-[#e4d8c7] bg-[#
 export function AromaForm({ mode, aromaId }: { mode: "new" | "edit"; aromaId?: string }) {
   const router = useRouter();
   const { session } = useAuth("admin");
-  const { record } = useAromaRecord(aromaId ?? "", session?.userId, true);
+  const { record } = useAromaRecord(aromaId ?? "", session?.userId);
   const [toast, setToast] = useState("");
   const [error, setError] = useState("");
   const [ingredients, setIngredients] = useState<AromaIngredient[]>([
@@ -35,26 +34,14 @@ export function AromaForm({ mode, aromaId }: { mode: "new" | "edit"; aromaId?: s
       setError("タイトルを入力してください");
       return;
     }
-    await createAromaRecord({
-      user_id: String(form.get("user_id")),
-      title,
-      subtitle: String(form.get("subtitle") ?? ""),
-      concept: String(form.get("concept") ?? ""),
-      mood: String(form.get("mood") ?? ""),
-      purpose: String(form.get("purpose") ?? ""),
-      made_at: String(form.get("made_at") ?? ""),
-      blend_notes: String(form.get("blend_notes") ?? ""),
-      usage_notes: String(form.get("usage_notes") ?? ""),
-      caution_notes: String(form.get("caution_notes") ?? ""),
-      reorder_url: String(form.get("reorder_url") ?? ""),
-      status: String(form.get("status") ?? "draft") as "draft" | "published",
-      base_blend_id: String(form.get("base_blend_id") ?? ""),
-      base_blend_name: demoBaseBlends.find((blend) => blend.id === String(form.get("base_blend_id")))?.name ?? "",
-      base_blend_volume_ml: Number(form.get("base_blend_volume_ml") ?? 0),
-      blend_lot_number: String(form.get("blend_lot_number") ?? ""),
-      brainwave_profile_id: String(form.get("brainwave_profile_id") ?? ""),
-      ingredients: ingredients.filter((item) => item.name.trim()),
-    });
+    // 保存はまだできない。
+    // 記録の作成・更新は事業者向けアプリ(別リポジトリ selenia-aroma-master)の
+    // 役割で、こちら側には書き込みのAPIを用意していない。以前はここで
+    // 固定データへ書いたつもりになっていたが、実際には何も保存されず、
+    // 「保存しました」とだけ出る状態だった。誤解を招くので明示する。
+    setError("この画面からは保存できません。記録の作成は事業者向けアプリで行ってください。");
+    return;
+
     setToast(mode === "new" ? "保存しました" : "更新しました");
     setTimeout(() => router.push("/admin"), 700);
   }

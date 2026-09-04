@@ -1,24 +1,36 @@
 "use client";
 
-import { FormEvent, useState } from "react";
-import { useEffect } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Icon } from "@/components/Icon";
-import { signInWithEmail } from "@/lib/auth";
-import { isCustomerOnlyApp } from "@/lib/appTarget";
-import { isDemoModeEnabled } from "@/lib/supabaseClient";
+import { fetchMe, signInWithEmail } from "@/lib/auth";
 
+/**
+ * ログイン画面。
+ *
+ * 判定はすべてサーバが行う。以前はデモ表示のときこの画面を素通りして
+ * ダッシュボードへ入れていたが、それだと誰でも中身を見られるため廃止した。
+ * 役割の振り分けもサーバの応答に従い、入力されたIDの中身では判断しない。
+ */
 export default function LoginPage() {
   const router = useRouter();
-  const [email, setEmail] = useState(isDemoModeEnabled ? "yuka@example.com" : "");
-  const [password, setPassword] = useState(isDemoModeEnabled ? "password" : "");
+  const [loginId, setLoginId] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [checking, setChecking] = useState(true);
   const [error, setError] = useState("");
 
+  // すでにログイン済みならログイン画面を出さずに中へ入れる
   useEffect(() => {
-    if (isCustomerOnlyApp && isDemoModeEnabled) {
-      router.replace("/dashboard");
-    }
+    let alive = true;
+    fetchMe().then((me) => {
+      if (!alive) return;
+      if (me.authenticated) router.replace(me.role === "admin" ? "/admin" : "/dashboard");
+      else setChecking(false);
+    });
+    return () => {
+      alive = false;
+    };
   }, [router]);
 
   async function onSubmit(event: FormEvent) {
@@ -26,14 +38,17 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const result = await signInWithEmail(email, password);
-      const role = isCustomerOnlyApp ? "customer" : "role" in result ? result.role : email.includes("admin") ? "admin" : "customer";
-      router.replace(role === "admin" ? "/admin" : "/dashboard");
+      const result = await signInWithEmail(loginId, password);
+      router.replace(result.role === "admin" ? "/admin" : "/dashboard");
     } catch (err) {
       setError(err instanceof Error ? err.message : "ログインに失敗しました");
     } finally {
       setLoading(false);
     }
+  }
+
+  if (checking) {
+    return <main className="grid min-h-screen place-items-center bg-[#FAF7F1] text-sm text-stone-500">読み込み中...</main>;
   }
 
   return (
@@ -58,7 +73,7 @@ export default function LoginPage() {
         </div>
         <label className="block text-sm font-bold text-stone-700">
           メール
-          <input value={email} onChange={(e) => setEmail(e.target.value)} type="text" inputMode="email" autoComplete="email" className="mt-2 h-14 w-full rounded-2xl border border-[#e4d8c7] bg-[#faf7f1] px-4 text-base outline-none transition focus:border-[#9b82c8]" required />
+          <input value={loginId} onChange={(e) => setLoginId(e.target.value)} type="text" inputMode="email" autoComplete="email" className="mt-2 h-14 w-full rounded-2xl border border-[#e4d8c7] bg-[#faf7f1] px-4 text-base outline-none transition focus:border-[#9b82c8]" required />
         </label>
         <label className="mt-4 block text-sm font-bold text-stone-700">
           パスワード
@@ -68,11 +83,9 @@ export default function LoginPage() {
         <button disabled={loading} className="mt-6 h-14 w-full rounded-full bg-[#755aa8] text-base font-bold text-white shadow-lg shadow-[#755aa8]/25 transition hover:brightness-105 active:scale-95 disabled:opacity-60" type="submit" aria-label="ログイン">
           {loading ? "ログイン中..." : "ログイン"}
         </button>
-        {isDemoModeEnabled ? (
-          <p className="mt-4 text-center text-xs leading-5 text-stone-500">
-            {isCustomerOnlyApp ? "デモ: yuka@example.com / password" : "デモ: customer は yuka@example.com、admin は admin@example.com"}
-          </p>
-        ) : null}
+        <p className="mt-4 text-center text-xs leading-5 text-stone-500">
+          ログイン情報は施術を受けたサロンからお受け取りください。
+        </p>
       </form>
     </main>
   );

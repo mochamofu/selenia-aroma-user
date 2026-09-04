@@ -1,47 +1,42 @@
-import { demoAromas } from "@/data/mockData";
-import { supabase } from "@/lib/supabaseClient";
+"use client";
+
 import type { AromaIngredient, AromaRecord } from "@/types/aroma";
 
-export async function getAromaRecords(userId: string, isAdmin = false): Promise<AromaRecord[]> {
-  if (!supabase) {
-    return demoAromas.filter((record) => isAdmin || (record.user_id === userId && record.status === "published"));
-  }
+/**
+ * 制作記録の取得。
+ *
+ * 誰の記録かはサーバがセッションから決めるため、ここからユーザーIDを
+ * 送らない。送ってもサーバは見ない。「画面が指定した相手の記録を返す」形に
+ * すると、他人のIDを送るだけで他人のカルテが読めてしまう。
+ */
 
-  let query = supabase.from("aroma_records").select("*, aroma_ingredients(*)").order("made_at", { ascending: false });
-  if (!isAdmin) query = query.eq("user_id", userId).eq("status", "published");
-  const { data, error } = await query;
-  if (error) throw error;
-  return ((data ?? []) as unknown as Array<Record<string, unknown>>).map((row) => {
-    const { aroma_ingredients, ...record } = row;
-    return {
-      ...record,
-      ingredients: (aroma_ingredients ?? []) as AromaIngredient[],
-    } as AromaRecord;
+function toRecord(row: Record<string, unknown>): AromaRecord {
+  return row as unknown as AromaRecord;
+}
+
+export async function getAromaRecords(): Promise<AromaRecord[]> {
+  const res = await fetch("/api/records", { cache: "no-store", credentials: "same-origin" });
+  if (res.status === 401) return [];
+  if (!res.ok) throw new Error("記録を読み込めませんでした");
+  const body = (await res.json()) as { items?: Record<string, unknown>[] };
+  return (body.items ?? []).map(toRecord);
+}
+
+export async function getAromaRecordById(
+  id: string,
+): Promise<{ record: AromaRecord; ingredients: AromaIngredient[] } | null> {
+  const res = await fetch(`/api/records/${encodeURIComponent(id)}`, {
+    cache: "no-store",
+    credentials: "same-origin",
   });
-}
+  // 他人の記録も存在しない記録も404。区別しないのはサーバ側の意図的な設計
+  if (res.status === 404 || res.status === 401) return null;
+  if (!res.ok) throw new Error("記録を読み込めませんでした");
 
-export async function getAromaRecordById(id: string, userId: string, isAdmin = false): Promise<AromaRecord | null> {
-  const records = await getAromaRecords(userId, isAdmin);
-  return records.find((record) => record.id === id) ?? null;
-}
-
-export async function createAromaRecord(record: Partial<AromaRecord>) {
-  if (!supabase) {
-    return { ...record, id: `demo-${Date.now()}` };
-  }
-  const { ingredients = [], ...payload } = record;
-  const { data, error } = await supabase.from("aroma_records").insert(payload).select().single();
-  if (error) throw error;
-  if (ingredients.length) {
-    const ingredientRows = ingredients.map((ingredient) => ({
-      aroma_record_id: data.id,
-      name: ingredient.name,
-      amount: ingredient.amount,
-      unit: ingredient.unit,
-      sort_order: ingredient.sort_order,
-    }));
-    const { error: ingredientError } = await supabase.from("aroma_ingredients").insert(ingredientRows);
-    if (ingredientError) throw ingredientError;
-  }
-  return data;
+  const body = (await res.json()) as {
+    record?: Record<string, unknown>;
+    ingredients?: AromaIngredient[];
+  };
+  if (!body.record) return null;
+  return { record: toRecord(body.record), ingredients: body.ingredients ?? [] };
 }

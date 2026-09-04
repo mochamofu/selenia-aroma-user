@@ -2,7 +2,7 @@
 // 使い方: node --experimental-strip-types --import ./scripts/register-alias.mjs scripts/generate-d1-seed.mjs
 import { writeFileSync } from "node:fs";
 import { operatorCustomers } from "../src/data/operatorCustomers.ts";
-import { demoBaseBlends, demoMoods } from "../src/data/mockData.ts";
+import { demoAromas, demoBaseBlends, demoMoods } from "../src/data/mockData.ts";
 import { essentialOils } from "../src/data/essentialOils.ts";
 
 const q = (v) => v === null || v === undefined ? "null" : `'${String(v).replace(/'/g, "''")}'`;
@@ -58,5 +58,38 @@ for (const m of demoMoods) {
 }
 
 lines.push("");
+// 制作記録は、参照先(base_blends)を入れたあとに投入する。
+// 先に入れると外部キー制約で落ちる。
+// 制作記録を、D1側の顧客へ割り当てる。
+// 固定データは user-yuka などを使っているが、D1の顧客マスタは別のIDなので
+// ここで対応づける。割り当て先が無いものは入れない。
+const RECORD_OWNER = {
+  "user-yuka": "user-sakura",
+  "user-satoshi": "user-ren",
+  "user-ayaka": "user-mika",
+  "user-admin": "user-haruto",
+};
+
+lines.push("", "-- 制作記録（カルテ）");
+for (const r of demoAromas) {
+  const owner = RECORD_OWNER[r.user_id];
+  if (!owner) continue;
+  lines.push(
+    `insert or ignore into aroma_records (id, user_id, blend_lot_number, base_blend_id, base_blend_name, base_blend_volume_ml, title, subtitle, concept, mood, purpose, blend_notes, usage_notes, caution_notes, total_volume_ml, reorder_url, price, volume, status, made_at) values (` +
+    [q(r.id), q(owner), q(r.blend_lot_number), q(r.base_blend_id), q(r.base_blend_name),
+     r.base_blend_volume_ml ?? "null", q(r.title), q(r.subtitle ?? ""), q(r.concept ?? ""),
+     q(r.mood ?? ""), q(r.purpose ?? ""), q(r.blend_notes ?? ""), q(r.usage_notes ?? ""),
+     q(r.caution_notes ?? ""), r.total_volume_ml ?? "null", q(r.reorder_url), r.price ?? "null",
+     q(r.volume), q(r.status ?? "published"), q(r.made_at)].join(", ") + `);`
+  );
+  for (const i of r.ingredients ?? []) {
+    lines.push(
+      `insert or ignore into aroma_ingredients (id, aroma_record_id, name, amount, unit, sort_order) values (` +
+      [q(i.id), q(r.id), q(i.name), q(i.amount), q(i.unit), i.sort_order ?? 0].join(", ") + `);`
+    );
+  }
+}
+
+
 writeFileSync(new URL("../cloudflare/d1/0002_seed.sql", import.meta.url), lines.join("\n"));
 console.log(`顧客 ${operatorCustomers.length} / ベース ${demoBaseBlends.length} / 精油 ${essentialOils.length} / 気分 ${demoMoods.length}`);
