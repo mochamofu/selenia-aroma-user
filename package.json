@@ -9,7 +9,12 @@
     "start": "next start",
     "start:3100": "next start -p 3100",
     "lint": "eslint",
-    "test": "node --experimental-strip-types --test --disable-warning=ExperimentalWarning \"src/**/*.test.ts\""
+    "test": "node --experimental-strip-types --test --disable-warning=ExperimentalWarning \"src/**/*.test.ts\"",
+    "db:migrate": "node scripts/d1-migrate.mjs --remote",
+    "db:migrate:local": "node scripts/d1-migrate.mjs",
+    "db:tables": "wrangler d1 execute selenia-aroma --remote --yes --config cloudflare/wrangler.toml --command \"select name from sqlite_master where type='table' order by name\"",
+    "db:tables:local": "wrangler d1 execute selenia-aroma --local --config cloudflare/wrangler.toml --command \"select name from sqlite_master where type='table' order by name\"",
+    "db:counts": "wrangler d1 execute selenia-aroma --remote --yes --config cloudflare/wrangler.toml --command \"select 'stores' t, count(*) n from stores union all select 'profiles', count(*) from profiles union all select 'base_blends', count(*) from base_blends union all select 'essential_oils', count(*) from essential_oils union all select 'mood_categories', count(*) from mood_categories\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.86.0",
@@ -26,6 +31,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.129.0"
   }
 }
