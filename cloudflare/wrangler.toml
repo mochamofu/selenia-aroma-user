@@ -1,5 +1,5 @@
-# Cloudflare Workers の設定ひな型。
-# database_id と bucket_name は、Cloudflareのダッシュボードで作成したあとに差し替える。
+# Cloudflare Workers の設定。
+# database_id は作成済みのD1のもの。bucket_name はR2を作ったら確認する。
 # ここに書く値はいずれも秘密情報ではないため、リポジトリに含めてよい。
 # APIトークンやアクセスキーはこのファイルに書かず、Cloudflare側に登録する。
 
@@ -11,7 +11,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "selenia-aroma"
-database_id = "ここにDatabase IDを入れる"
+database_id = "c06d174c-ab1f-4b82-9bb1-7b69a297980d"
 
 [[r2_buckets]]
 binding = "IMAGES"
