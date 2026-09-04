@@ -89,6 +89,23 @@
     npm run db:tables           # テーブルの一覧
     npm run db:counts           # 店舗・顧客・ベースブレンド・精油の件数
 
+### Workers として動かして確かめる
+
+    npm run db:migrate:local    # 先に手元の仮想D1へ流しておく
+    npm run cf:build            # Workers 向けにビルド
+    npx wrangler dev --local    # http://localhost:8787
+
+`db:migrate:local` を先に流さないと、手元の仮想D1が空のままで
+API が 500 を返す。`/api/health` を開くと、いま D1 につながっているか
+固定データで動いているかが分かる。
+
+| URL | 期待する結果 |
+| --- | --- |
+| `/api/health` | `source: "d1"` とテーブル一覧 |
+| `/api/catalog/base-blends` | 12件 |
+| `/api/catalog/essential-oils` | 36件 |
+| `/api/catalog/moods` | 6件 |
+
 ### 入るもの
 
 | | 件数 |
