@@ -45,3 +45,6 @@ next-env.d.ts
 
 # wrangler がローカル検証用に作る仮想D1のデータ
 .wrangler/
+
+# OpenNext が作る Workers 向けのビルド成果物
+.open-next/

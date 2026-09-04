@@ -1,4 +1,5 @@
 # Cloudflare Workers の設定。
+# OpenNext がビルド成果物(.open-next)を探すため、リポジトリのルートに置く。
 # database_id は作成済みのD1のもの。bucket_name はR2を作ったら確認する。
 # ここに書く値はいずれも秘密情報ではないため、リポジトリに含めてよい。
 # APIトークンやアクセスキーはこのファイルに書かず、Cloudflare側に登録する。

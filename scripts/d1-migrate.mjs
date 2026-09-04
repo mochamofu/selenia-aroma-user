@@ -18,7 +18,7 @@ import path from "node:path";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const sqlDir = path.join(root, "cloudflare", "d1");
-const config = path.join(root, "cloudflare", "wrangler.toml");
+const config = path.join(root, "wrangler.toml");
 const DATABASE = "selenia-aroma";
 
 const remote = process.argv.includes("--remote");

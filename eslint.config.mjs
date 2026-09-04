@@ -12,6 +12,10 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // OpenNext が Workers 向けに生成する成果物。自分で書いたコードではない
+    ".open-next/**",
+    // wrangler がローカル検証用に作る仮想D1のデータ
+    ".wrangler/**",
   ]),
 ]);
 
