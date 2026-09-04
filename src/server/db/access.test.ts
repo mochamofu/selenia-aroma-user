@@ -14,7 +14,7 @@ import {
 
 const SAKURA: Viewer = { role: "customer", userId: "user-sakura" };
 const REN: Viewer = { role: "customer", userId: "user-ren" };
-const OPERATOR: Viewer = { role: "operator", userId: "user-staff" };
+const OPERATOR: Viewer = { role: "operator", userId: "user-staff", storeId: "store-ginza" };
 const ADMIN: Viewer = { role: "admin", userId: "user-admin" };
 const GUEST: Viewer = { role: "guest" };
 
@@ -27,11 +27,11 @@ function rows(condition: { sql: string; params: unknown[] }) {
 before(() => {
   db = new DatabaseSync(":memory:");
   db.exec(readFileSync(new URL("../../../cloudflare/d1/0001_initial.sql", import.meta.url), "utf8"));
-  db.exec(`insert into stores (id,store_code,name) values ('store-ginza','01','銀座店')`);
+  db.exec(`insert into stores (id,store_code,name) values ('store-ginza','001','銀座店')`);
   db.exec(`
     insert into profiles (id,user_id,store_id,customer_number,name,role) values
-      ('p1','user-sakura','store-ginza','01260001','田中 さくら','customer'),
-      ('p2','user-ren','store-ginza','01260002','佐藤 蓮','customer'),
+      ('p1','user-sakura','store-ginza','2600001','田中 さくら','customer'),
+      ('p2','user-ren','store-ginza','2600002','佐藤 蓮','customer'),
       ('p3','user-staff',null,null,'測定担当','operator')
   `);
   db.exec(`
@@ -92,7 +92,7 @@ describe("顧客プロフィールの絞り込み", () => {
   test("顧客には自分以外の氏名と顧客番号が返らない", () => {
     const result = rows(selectWithScope("profiles", "user_id,name,customer_number", buildProfileScope(SAKURA)));
     assert.deepEqual(result.map((r) => r.user_id), ["user-sakura"]);
-    assert.equal(result.some((r) => r.customer_number === "01260002"), false);
+    assert.equal(result.some((r) => r.customer_number === "2600002"), false);
   });
 
   test("事業者には全員が見える", () => {

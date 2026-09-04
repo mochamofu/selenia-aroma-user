@@ -43,8 +43,18 @@ export default function LoginPage() {
           <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-[24px] bg-gradient-to-br from-[#c6b0e6] to-[#d7c58e] text-white shadow-lg">
             <Icon name="Sparkles" className="h-8 w-8" />
           </div>
-          <h1 className="text-2xl font-bold text-stone-900">Selenia Aroma</h1>
-          <p className="mt-2 text-sm leading-6 text-stone-500">制作記録と香りの記憶を、いつでも手元に。</p>
+          {/*
+            事業者向けアプリ(selenia-aroma-master)と入口の見た目が似ていて、
+            どちらを開いているのか分からないという声があったため、誰向けの
+            アプリなのかをここで言い切る。
+          */}
+          <span className="inline-flex items-center rounded-full bg-[#efe7f8] px-3 py-1 text-xs font-bold tracking-wide text-[#6b53a0]">
+            お客様用
+          </span>
+          <h1 className="mt-3 text-2xl font-bold text-stone-900">Selenia Aroma</h1>
+          <p className="mt-2 text-sm leading-6 text-stone-500">
+            あなたのために調香したオイルの記録を、いつでも手元に。
+          </p>
         </div>
         <label className="block text-sm font-bold text-stone-700">
           メール

@@ -6,20 +6,46 @@
 
 pragma foreign_keys = on;
 
--- 店舗台帳。顧客番号の先頭2桁に対応する。
+-- 加盟店台帳。
+--
+-- 直営店ではなく、独立したサロンがオプションとして導入する前提で作る。
+-- そのため店名・オーナー・連絡先は後から自由に変わる。変わらないのは
+-- store_code(加入順の通し番号)だけ。
+--
+-- 閉店しても行は消さず status で表す。消すと、過去の施術番号がどこの店の
+-- ものか分からなくなるため。store_code も再利用しない。
 create table if not exists stores (
   id text primary key,
+  -- 加入した順の通し番号 001〜999。一度発行したら変えない
   store_code text not null unique,
+  -- 表に出す店名。いつでも変更してよい
   name text not null,
+  -- 請求・手数料の宛先。店名とは別に持つ
+  legal_name text not null default '',
+  owner_name text not null default '',
+  contact_email text not null default '',
+  phone text not null default '',
+  address text not null default '',
+  status text not null default 'active',
+  joined_at text not null default (datetime('now')),
+  closed_at text,
+  note text not null default '',
   created_at text not null default (datetime('now')),
-  check (length(store_code) = 2 and store_code glob '[0-9][0-9]')
+  check (length(store_code) = 3 and store_code glob '[0-9][0-9][0-9]'),
+  check (status in ('active', 'paused', 'closed'))
 );
 
 create table if not exists profiles (
   id text primary key,
   user_id text not null unique,
   store_id text references stores(id) on delete set null,
-  -- 顧客番号(カルテ番号): 店舗2桁 + 年度2桁 + 店舗内連番4桁
+  -- 初めて受けた加盟店。手数料の配分先にもなる。
+  -- 「どの店の顧客か」を番号ではなく列で持つのが要点。列なら間違いを直せるが、
+  -- 番号に焼き込むと一生直せない。加盟店は閉店・改名・譲渡が起こる
+  origin_store_id text references stores(id) on delete set null,
+  -- 顧客番号(カルテ番号): 年度2桁 + 全加盟店で共通の通し番号5桁 = 7桁
+  --   2600123 → 表示は 26-00123
+  -- 店舗を含めない。人に一度だけ発行し、どの加盟店へ行っても同じ番号を使う
   customer_number text unique,
   name text not null,
   name_kana text not null default '',
@@ -32,7 +58,7 @@ create table if not exists profiles (
   frequent_times text not null default '[]',
   created_at text not null default (datetime('now')),
   check (role in ('customer', 'admin', 'operator')),
-  check (customer_number is null or (length(customer_number) = 8 and customer_number glob '[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]')),
+  check (customer_number is null or (length(customer_number) = 7 and customer_number glob '[0-9][0-9][0-9][0-9][0-9][0-9][0-9]')),
   check (json_valid(favorite_types) and json_valid(frequent_times))
 );
 
@@ -175,6 +201,7 @@ create index if not exists idx_profiles_name on profiles(name);
 create index if not exists idx_profiles_kana on profiles(name_kana);
 create index if not exists idx_profiles_last_visit on profiles(last_visit_at);
 create index if not exists idx_profiles_store on profiles(store_id);
+create index if not exists idx_profiles_origin_store on profiles(origin_store_id);
 create index if not exists idx_records_user_status on aroma_records(user_id, status, made_at);
 create index if not exists idx_ingredients_record on aroma_ingredients(aroma_record_id, sort_order);
 create index if not exists idx_images_user on brainwave_images(user_id, created_at);

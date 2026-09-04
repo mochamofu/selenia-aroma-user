@@ -3,6 +3,7 @@ import {
   assertOperator,
   buildAromaRecordScope,
   buildProfileScope,
+  buildStoreCustomerScope,
   buildUserOwnedScope,
   isOperatorRole,
   selectWithScope,
@@ -146,11 +147,72 @@ export async function listMoodCategories(db: QueryRunner) {
   return db.all(`select id, slug, name, description, image_url, color, icon from mood_categories`, []);
 }
 
-/** 顧客数などの集計。事業者のみ。 */
+/**
+ * 顧客数。施術者は自店に来店した人だけ、管理者は全店を数える。
+ * ダッシュボードの数字が一覧の件数と食い違わないよう、一覧と同じ絞り込みを使う。
+ */
 export async function countCustomers(db: QueryRunner, viewer: Viewer) {
   assertOperator(viewer);
-  const row = await db.first<{ c: number }>(`select count(*) as c from profiles where role = 'customer'`, []);
+  const scope = buildStoreCustomerScope(viewer, "p");
+  const row = await db.first<{ c: number }>(
+    `select count(*) as c from profiles p where (${scope.sql}) and p.role = 'customer'`,
+    scope.params,
+  );
   return row?.c ?? 0;
+}
+
+/**
+ * 自店の顧客一覧。
+ *
+ * 施術者には「自分の店舗に来店した人」だけを返す。管理者には全店舗を返す。
+ * 所属ではなく来店の事実で判定するため、他店で登録された常連客も、
+ * 一度この店舗へ来ていれば同じ顧客番号のまま一覧に載る。
+ *
+ * 初来店でまだ来店記録が無い人はここには出ない。その場合は searchCustomers で
+ * 名前や顧客番号から呼び出す(全店横断)。
+ */
+export async function listStoreCustomers(
+  db: QueryRunner,
+  viewer: Viewer,
+  options: { limit?: number; reason?: string } = {},
+) {
+  assertOperator(viewer);
+
+  await recordAudit(db, viewer, {
+    action: "view",
+    targetTable: "profiles",
+    targetId: null,
+    reason: options.reason ?? (viewer.role === "admin" ? "顧客一覧(全店)" : "顧客一覧(自店)"),
+  });
+
+  const scope = buildStoreCustomerScope(viewer, "p");
+  return db.all(
+    `select p.user_id, p.customer_number, p.name, p.name_kana, p.birthday,
+            p.last_visit_at, s.name as store_name, s.store_code
+       from profiles p
+       left join stores s on s.id = p.store_id
+      where (${scope.sql})
+        and p.role = 'customer'
+      order by (p.last_visit_at is null), p.last_visit_at desc, p.name
+      limit ?`,
+    [...scope.params, options.limit ?? 100],
+  );
+}
+
+/**
+ * 1人の来店履歴。どの店舗で何回受けたかを新しい順に返す。
+ * 店舗をまたいでも同じ顧客番号で1本につながっていることを画面で示すために使う。
+ */
+export async function listVisits(db: QueryRunner, viewer: Viewer, userId: string) {
+  assertOperator(viewer);
+  return db.all(
+    `select v.id, v.visited_at, v.note, v.staff_user_id, s.name as store_name, s.store_code
+       from visits v
+       left join stores s on s.id = v.store_id
+      where v.user_id = ?
+      order by v.visited_at desc`,
+    [userId],
+  );
 }
 
 /**

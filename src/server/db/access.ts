@@ -11,9 +11,16 @@
  * 書き忘れても他人のデータが混ざらない。
  */
 
+/**
+ * 画面を見ている人。
+ *
+ * operator(施術者)だけ storeId を持つ。これは「どの店舗の画面として見ているか」で、
+ * 顧客一覧をその店舗に来店した人だけに絞るために使う。
+ * admin(最高権限)は storeId を持たない。全店舗が見える。
+ */
 export type Viewer =
   | { role: "customer"; userId: string }
-  | { role: "operator"; userId: string }
+  | { role: "operator"; userId: string; storeId: string }
   | { role: "admin"; userId: string }
   | { role: "guest" };
 
@@ -83,6 +90,35 @@ export function buildUserOwnedScope(viewer: Viewer, alias?: string): SqlConditio
  */
 export function buildProfileScope(viewer: Viewer, alias?: string): SqlCondition {
   return buildUserOwnedScope(viewer, alias);
+}
+
+/**
+ * 顧客一覧の絞り込み条件を作る。プロフィール表の別名を渡して使う。
+ *
+ * - 管理者(最高権限): 全店舗の顧客
+ * - 施術者: 自分の店舗に来店した人だけ
+ * - それ以外: 1件も返さない
+ *
+ * 施術者の判定を「所属店舗(profiles.store_id)」ではなく「来店した事実(visits)」で
+ * 行うのが要点。所属で決めると、銀座で登録した人が大阪へ来店したとき大阪の一覧に
+ * 出てこない。顧客番号は人に一度だけ発行し店舗をまたいでも変わらないため、
+ * 来店で判定すれば同じ番号のまま両方の店舗の一覧に載る。
+ *
+ * なお、この絞り込みが掛かるのは「一覧」だけ。名前や顧客番号での検索
+ * (searchCustomers)は全店横断のままにする。初来店の人や他店の常連を
+ * 呼び出せなくなると、カルテが分断されて別人扱いになるため。
+ */
+export function buildStoreCustomerScope(viewer: Viewer, alias?: string): SqlCondition {
+  if (viewer.role === "admin") {
+    return { sql: "1 = 1", params: [] };
+  }
+  if (viewer.role === "operator") {
+    return {
+      sql: `exists (select 1 from visits v where v.user_id = ${col("user_id", alias)} and v.store_id = ?)`,
+      params: [viewer.storeId],
+    };
+  }
+  return { sql: "1 = 0", params: [] };
 }
 
 /**
