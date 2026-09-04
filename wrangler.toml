@@ -14,9 +14,13 @@ binding = "DB"
 database_name = "selenia-aroma"
 database_id = "c06d174c-ab1f-4b82-9bb1-7b69a297980d"
 
-[[r2_buckets]]
-binding = "IMAGES"
-bucket_name = "selenia-aroma-images"
+# R2(脳波画像の保管)はバケットを作ってから有効にする。
+# 存在しないバケットを書いたままだとデプロイが失敗するため、いまは外してある。
+# バケット selenia-aroma-images を作ったら、下の3行のコメントを外す。
+# [[r2_buckets]]
+# binding = "IMAGES"
+# bucket_name = "selenia-aroma-images"
 
 [vars]
-NEXT_PUBLIC_APP_TARGET = "all"
+# 購入者向けアプリとして動かす。/admin と /operator は /dashboard へ流す
+NEXT_PUBLIC_APP_TARGET = "customer"

@@ -1,0 +1,66 @@
+name: Cloudflareへデプロイ
+
+# 手で押したときだけ動かす。
+# main へ入るたびに本番が入れ替わると、確認前の変更が出てしまうため。
+# GitHubの Actions タブ → このワークフロー → Run workflow で実行する。
+on:
+  workflow_dispatch:
+    inputs:
+      migrate:
+        description: "データベースの更新も行う（テーブル追加や初期データの投入）"
+        type: boolean
+        default: false
+
+# 同時に2つ走ると本番が壊れるので、1本ずつ順番に実行する
+concurrency:
+  group: deploy-cloudflare
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      # デプロイ前に必ず通す。壊れたものを本番へ出さないため
+      - name: 型チェック
+        run: npx tsc --noEmit
+      - name: lint
+        run: npm run lint
+      - name: テスト
+        run: npm test
+
+      - name: データベースを更新
+        if: ${{ inputs.migrate }}
+        run: npm run db:migrate
+
+      # NEXT_PUBLIC_ で始まる値はビルド時に埋め込まれる。
+      # wrangler.toml の [vars] は実行時の設定なので、ここでも渡す必要がある。
+      - name: Workers 向けにビルド
+        run: npm run cf:build
+        env:
+          NEXT_PUBLIC_APP_TARGET: customer
+          # 本番の認証を入れるまでは、現在のVercel版と同じデモ表示で動かす
+          NEXT_PUBLIC_ENABLE_DEMO_MODE: "true"
+
+      - name: デプロイ
+        run: npm run cf:deploy
+
+      - name: デプロイ後の確認
+        run: |
+          echo "デプロイが完了しました。"
+          echo "確認するURL:"
+          echo "  /api/health                  source が d1 になっているか"
+          echo "  /api/catalog/base-blends     12件"
+          echo "  /api/catalog/essential-oils  36件"
+          echo "  /api/catalog/moods           6件"
