@@ -1,5 +1,5 @@
 import type { QueryRunner } from "../db/runner.ts";
-import { hashPassword, needsRehash, verifyPassword } from "./password.ts";
+import { hashPassword, needsRehash, PBKDF2_ITERATIONS, verifyPassword } from "./password.ts";
 import { createSession, deleteExpiredSessions } from "./session.ts";
 
 /**
@@ -18,8 +18,13 @@ export const MAX_FAILED_ATTEMPTS = 10;
 /** ロックする時間(分)。 */
 export const LOCK_MINUTES = 15;
 
-/** 存在しないIDでも同じだけ計算するためのダミー。実在の値ではない。 */
-const DUMMY_HASH = "pbkdf2$210000$AAAAAAAAAAAAAAAAAAAAAA==$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+/**
+ * 存在しないIDでも同じだけ計算するためのダミー。実在の値ではない。
+ * 回数は実際に使っている値に合わせる。ここだけ重いと、応答時間の差から
+ * 「そのIDは登録されていない」と分かってしまう。
+ */
+const DUMMY_HASH =
+  `pbkdf2$${PBKDF2_ITERATIONS}$AAAAAAAAAAAAAAAAAAAAAA==$AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=`;
 
 export type LoginResult =
   | { ok: true; token: string; userId: string; role: string }

@@ -10,6 +10,10 @@ on:
         description: "データベースの更新も行う（テーブル追加や初期データの投入）"
         type: boolean
         default: false
+      seedCredentials:
+        description: "検証用のログイン用アカウントを作り直す"
+        type: boolean
+        default: false
 
 # 同時に2つ走ると本番が壊れるので、1本ずつ順番に実行する
 concurrency:
@@ -44,6 +48,12 @@ jobs:
         if: ${{ inputs.migrate }}
         run: npm run db:migrate
 
+      # ログインできる状態にする。パスワードは伸長してから入れるので、
+      # ここでも本番のD1にも平文は残らない。
+      - name: 検証用アカウントを作る
+        if: ${{ inputs.seedCredentials }}
+        run: npm run db:seed-credentials
+
       # NEXT_PUBLIC_ で始まる値はビルド時に埋め込まれる。
       # wrangler.toml の [vars] は実行時の設定なので、ここでも渡す必要がある。
       - name: Workers 向けにビルド
@@ -64,3 +74,4 @@ jobs:
           echo "  /api/catalog/base-blends     12件"
           echo "  /api/catalog/essential-oils  36件"
           echo "  /api/catalog/moods           6件"
+          echo "  /login                       sakura@example.com でログインできるか"

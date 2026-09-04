@@ -19,10 +19,18 @@ export async function POST(request: Request) {
     return Response.json({ error: "IDとパスワードを入力してください" }, { status: 400 });
   }
 
-  const db = await requireDb();
-  const result = await login(db, loginId, password, {
-    userAgent: request.headers.get("user-agent") ?? "",
-  });
+  let result;
+  try {
+    const db = await requireDb();
+    result = await login(db, loginId, password, {
+      userAgent: request.headers.get("user-agent") ?? "",
+    });
+  } catch (err) {
+    // 何が起きたかを残す。原因が分からないまま500になると調べようがない。
+    // 利用者へは中身を返さない(内部の作りを外へ出さないため)
+    console.error("[login] 失敗:", err instanceof Error ? err.message : err);
+    return Response.json({ error: "ログイン処理でエラーが発生しました" }, { status: 500 });
+  }
 
   if (!result.ok) {
     // 「IDが無い」と「パスワードが違う」を区別して返さない。

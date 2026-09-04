@@ -1,6 +1,8 @@
 // scripts/seed-credentials.mjs から使う。src/server/auth/password.ts と
 // 同じ形式(pbkdf2$回数$salt$hash)を作る。中身を変えるときは両方を揃えること。
-const PBKDF2_ITERATIONS = 210_000;
+// src/server/auth/password.ts と必ず同じ値にすること。
+// Cloudflare Workers 無料プランのCPU上限(10ms)に収まる回数。
+const PBKDF2_ITERATIONS = 10_000;
 
 export async function hashPassword(password) {
   const salt = crypto.getRandomValues(new Uint8Array(16));

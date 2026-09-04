@@ -17,7 +17,9 @@
     "db:counts": "wrangler d1 execute selenia-aroma --remote --yes --command \"select 'stores' t, count(*) n from stores union all select 'profiles', count(*) from profiles union all select 'base_blends', count(*) from base_blends union all select 'essential_oils', count(*) from essential_oils union all select 'mood_categories', count(*) from mood_categories\"",
     "cf:build": "opennextjs-cloudflare build",
     "cf:preview": "opennextjs-cloudflare preview",
-    "cf:deploy": "opennextjs-cloudflare deploy"
+    "cf:deploy": "opennextjs-cloudflare deploy",
+    "db:seed-credentials": "node scripts/seed-credentials.mjs --remote",
+    "db:seed-credentials:local": "node scripts/seed-credentials.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.86.0",
