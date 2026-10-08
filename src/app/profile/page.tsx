@@ -7,7 +7,14 @@ import { Icon } from "@/components/Icon";
 import { useAromaRecords } from "@/hooks/useAromaRecords";
 import { useAuth } from "@/hooks/useAuth";
 
-const menu = ["アカウント設定", "お届け先情報", "お支払い方法", "通知設定", "ヘルプ・お問い合わせ"];
+// href のあるものだけが開ける。ほかはまだ準備中。
+const menu: Array<{ label: string; href?: string }> = [
+  { label: "ご注文の履歴", href: "/orders" },
+  { label: "お届け先情報", href: "/profile/address" },
+  { label: "アカウント設定" },
+  { label: "通知設定" },
+  { label: "ヘルプ・お問い合わせ" },
+];
 
 export default function ProfilePage() {
   const { session, profile, logout } = useAuth("customer");
@@ -39,7 +46,13 @@ export default function ProfilePage() {
           <div className="mt-3 flex flex-wrap gap-2">{profile?.frequent_times?.map((time) => <span key={time} className="rounded-full bg-[#eef4e9] px-3 py-1.5 text-xs font-bold text-[#5e7d56]">{time}</span>)}</div>
         </section>
         <section className="overflow-hidden rounded-[28px] bg-white shadow-lg shadow-stone-300/20">
-          {menu.map((item) => <button key={item} className="flex h-14 w-full items-center justify-between border-b border-stone-100 px-5 text-left text-sm font-bold text-stone-700"><span>{item}</span><Icon name="ChevronRight" className="h-5 w-5 text-stone-400" /></button>)}
+          {menu.map((item) =>
+            item.href ? (
+              <Link key={item.label} href={item.href} className="flex h-14 w-full items-center justify-between border-b border-stone-100 px-5 text-left text-sm font-bold text-stone-700"><span>{item.label}</span><Icon name="ChevronRight" className="h-5 w-5 text-stone-400" /></Link>
+            ) : (
+              <div key={item.label} className="flex h-14 w-full items-center justify-between border-b border-stone-100 px-5 text-left text-sm font-bold text-stone-400"><span>{item.label}</span><span className="text-xs">準備中</span></div>
+            ),
+          )}
           <button onClick={logout} className="flex h-14 w-full items-center gap-3 px-5 text-left text-sm font-bold text-red-600"><Icon name="LogOut" className="h-5 w-5" />ログアウト</button>
         </section>
       </div>

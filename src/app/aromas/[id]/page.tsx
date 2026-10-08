@@ -12,12 +12,14 @@ import { ErrorState, LoadingState } from "@/components/States";
 import { demoBaseBlends } from "@/data/mockData";
 import { useAromaRecord } from "@/hooks/useAromaRecords";
 import { useAuth } from "@/hooks/useAuth";
+import { useShop } from "@/hooks/useShop";
 
 export default function AromaDetailPage() {
   const params = useParams<{ id: string }>();
   const router = useRouter();
   const { session } = useAuth("customer");
-  const { record, loading, error } = useAromaRecord(params.id, session?.userId);
+  const { record, ingredients, loading, error } = useAromaRecord(params.id, session?.userId);
+  const shop = useShop(session?.userId);
   const baseBlend = demoBaseBlends.find((blend) => blend.id === record?.base_blend_id);
 
   return (
@@ -56,21 +58,16 @@ export default function AromaDetailPage() {
                   ))}
                 </div>
               </div>
-              {record.brainwave_profile_id ? (
-                <div className="mt-3 rounded-2xl border border-[#e8dcc7] px-4 py-3">
-                  <p className="text-xs font-bold text-stone-500">脳波データ連携ID</p>
-                  <p className="mt-1 text-sm font-bold text-stone-800">{record.brainwave_profile_id}</p>
-                </div>
-              ) : null}
             </section>
             <section className="rounded-[28px] bg-white p-5 shadow-lg shadow-stone-300/20">
               <h2 className="mb-4 text-lg font-bold text-stone-900">追加したオイル</h2>
-              <IngredientList ingredients={record.ingredients} />
+              {/* 材料は記録とは別に届く（record.ingredients は無い）。 */}
+              <IngredientList ingredients={ingredients} />
             </section>
             <Info title="ブレンドメモ" body={record.blend_notes} />
             <Info title="使用方法" body={record.usage_notes} />
             <Info title="注意事項" body={record.caution_notes} />
-            <ReorderButton aromaId={record.id} available={Boolean(record.reorder_url)} />
+            <ReorderButton aromaId={record.id} available={Boolean(shop?.open || record.reorder_url)} />
           </div>
         </div>
       ) : (
@@ -80,7 +77,9 @@ export default function AromaDetailPage() {
   );
 }
 
-function Info({ title, body }: { title: string; body: string }) {
+function Info({ title, body }: { title: string; body?: string | null }) {
+  // 書かれていない項目は出さない
+  if (!body?.trim()) return null;
   return (
     <section className="rounded-[28px] bg-white p-5 shadow-lg shadow-stone-300/20">
       <h2 className="text-lg font-bold text-stone-900">{title}</h2>
