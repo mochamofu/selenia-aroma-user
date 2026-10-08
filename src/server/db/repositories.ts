@@ -18,7 +18,7 @@ import { recordAudit } from "./audit.ts";
  */
 
 const PROFILE_COLUMNS = "id, user_id, customer_number, name, name_kana, birthday, avatar_url, role, favorite_types, frequent_times, last_visit_at, created_at";
-const RECORD_COLUMNS = "id, user_id, title, subtitle, concept, mood, purpose, status, made_at, base_blend_id, base_blend_name, brainwave_image_id, blend_lot_number, reorder_url, price, volume";
+const RECORD_COLUMNS = "id, user_id, title, subtitle, concept, mood, purpose, status, made_at, base_blend_id, base_blend_name, brainwave_image_id, blend_lot_number, reorder_url, price, volume, blend_notes, usage_notes, caution_notes";
 
 export async function listProfiles(db: QueryRunner, viewer: Viewer) {
   const query = selectWithScope("profiles", PROFILE_COLUMNS, buildProfileScope(viewer), {
